@@ -1,4 +1,5 @@
 release/
-raymini.pro
 Makefile
 models
+.tmp
+raymini
