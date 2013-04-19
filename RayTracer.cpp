@@ -64,54 +64,61 @@ QImage RayTracer::render (const Vec3Df & camPos,
 			Vec3Df step = stepX + stepY;
 			Vec3Df dir = direction + step;
 			dir.normalize ();
-			Vec3Df intersectionPoint;
-			Vec3Df normal;
+			Vertex intersectionPoint;
+			unsigned objectIntersectedIndex;
 			float smallestIntersectionDistance = 1000000.f;
 			Vec3Df c (backgroundColor);
+			bool hasIntersection=false;  
 			for (unsigned int k = 0; k < scene->getObjects().size (); k++) 
 			{
+				Vertex intersectionPointTemp;
 				const Object & o = scene->getObjects()[k];
 				Ray ray (camPos-o.getTrans (), dir);
-				bool hasIntersection = ray.intersectObject (o, intersectionPoint, normal);
-				if (hasIntersection) 
+				if (ray.intersectObject (o, intersectionPointTemp))
 				{	
-					float intersectionDistance = Vec3Df::squaredDistance (intersectionPoint + o.getTrans (), camPos);
+					float intersectionDistance = Vec3Df::squaredDistance (intersectionPointTemp.getPos() + o.getTrans (), camPos);
 					if (intersectionDistance < smallestIntersectionDistance) 
 					{
-						c = Vec3Df(0.0f,0.0f,0.0f);
-						Material material = o.getMaterial();
-						normal.normalize();
-						std::vector<Light> sceneLights = scene->getLights();
-						for(unsigned l=0; l < sceneLights.size(); l++)
-						{
-							/***   Phong Shading   ****/
-
-							//On place la lumiere dans le repere de la camera
-							Vec3Df lightPosCamSpace;
-							lightPosCamSpace[0]=Vec3Df::dotProduct(rightVector,sceneLights[l].getPos());
-							lightPosCamSpace[1]=Vec3Df::dotProduct(upVector,sceneLights[l].getPos());
-							lightPosCamSpace[2]=Vec3Df::dotProduct(-direction,sceneLights[l].getPos());
-							lightPosCamSpace+=camPos;
-
-							Vec3Df lightDirection = lightPosCamSpace - (intersectionPoint + o.getTrans());
-							lightDirection.normalize();
-							float diff = Vec3Df::dotProduct(normal, lightDirection);
-							Vec3Df r = 2*diff*normal-lightDirection;
-							if(diff<=0.0f)
-								diff=0.0f;
-							r.normalize();
-							Vec3Df v = -(intersectionPoint+o.getTrans());
-							v.normalize();
-							float spec = Vec3Df::dotProduct(r, -dir); 
-							if(spec <= 0.0f)
-								spec=0.0f;
-							c += sceneLights[l].getIntensity()*(material.getDiffuse()*diff + material.getSpecular()*spec)*sceneLights[l].getColor()*material.getColor();
-
-						}
-						c=255.0f*c;
+						hasIntersection=true;
+						objectIntersectedIndex=k;
+						intersectionPoint=intersectionPointTemp;
 						smallestIntersectionDistance = intersectionDistance;
 					}
 				}
+			}
+			if(hasIntersection)
+			{
+				c = Vec3Df(0.0f,0.0f,0.0f);
+				const Object & o = scene->getObjects()[objectIntersectedIndex];
+				Material material = o.getMaterial();
+				std::vector<Light> sceneLights = scene->getLights();
+				for(unsigned l=0; l < sceneLights.size(); l++)
+				{
+					/***   Phong Shading   ****/
+
+					//On place la lumiere dans le repere de la camera
+					Vec3Df lightPosCamSpace;
+					lightPosCamSpace[0]=Vec3Df::dotProduct(rightVector,sceneLights[l].getPos());
+					lightPosCamSpace[1]=Vec3Df::dotProduct(upVector,sceneLights[l].getPos());
+					lightPosCamSpace[2]=Vec3Df::dotProduct(-direction,sceneLights[l].getPos());
+					lightPosCamSpace+=camPos;
+
+					Vec3Df lightDirection = lightPosCamSpace - (intersectionPoint.getPos() + o.getTrans());
+					lightDirection.normalize();
+					float diff = Vec3Df::dotProduct(intersectionPoint.getNormal(), lightDirection);
+					Vec3Df r = 2*diff*intersectionPoint.getNormal()-lightDirection;
+					if(diff<=0.0f)
+						diff=0.0f;
+					r.normalize();
+					Vec3Df v = -(intersectionPoint.getPos()+o.getTrans());
+					v.normalize();
+					float spec = Vec3Df::dotProduct(r, -dir); 
+					if(spec <= 0.0f)
+						spec=0.0f;
+					c += sceneLights[l].getIntensity()*(material.getDiffuse()*diff + material.getSpecular()*spec)*sceneLights[l].getColor()*material.getColor();
+
+				}
+				c=255.0f*c;
 			}
 			image.setPixel (i, j, qRgb (clamp (c[0], 0, 255), clamp (c[1], 0, 255), clamp (c[2], 0, 255)));
 		}

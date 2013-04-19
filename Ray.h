@@ -30,7 +30,7 @@ public:
 
     bool intersect (const BoundingBox & bbox, Vec3Df & intersectionPoint) const;
     bool intersect (const BoundingBox & bbox, float & t) const;
-    bool intersectObject(const Object & o, Vec3Df & intersectionPoint, Vec3Df & normal) const;
+    bool intersectObject(const Object & o, Vertex & intersectionPoint) const;
     bool intersectTriangle(const Vec3Df & va, const Vec3Df & vb, const Vec3Df & vc, float & t, float & coef1, float & coef2) const;
     
 private:
