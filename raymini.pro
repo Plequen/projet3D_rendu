@@ -12,6 +12,7 @@ HEADERS = Window.h \
           Material.h \
           Object.h \
           Light.h \
+          AreaLight.h \
           Scene.h \
           RayTracer.h \
           Ray.h \
@@ -29,6 +30,7 @@ SOURCES = Window.cpp \
           Material.cpp \
           Object.cpp \
           Light.cpp \
+          AreaLight.cpp \
           Scene.cpp \ 
           RayTracer.cpp \
           Ray.cpp \

@@ -11,6 +11,8 @@
 #include "KDTree.h"
 #include <QProgressDialog>
 
+#define NB_POINT_DISC 30
+
 static RayTracer * instance = NULL;
 
 RayTracer * RayTracer::getInstance () 
@@ -92,35 +94,46 @@ QImage RayTracer::render (const Vec3Df & camPos,
 				c = Vec3Df(0.0f,0.0f,0.0f);
 				const Object & o = scene->getObjects()[objectIntersectedIndex];
 				Material material = o.getMaterial();
-				std::vector<Light> sceneLights = scene->getLights();
+				std::vector<AreaLight> sceneAreaLights = scene->getAreaLights();
 
-				for(unsigned l=0; l < sceneLights.size(); l++)
+				for(unsigned l=0; l < sceneAreaLights.size(); l++)
 				{
+					int visibility = NB_POINT_DISC;
 					Vec3Df pointWS = intersectionPoint.getPos()+o.getTrans();
-
-					Vec3Df lightPos=sceneLights[l].getPos();
-					//Si l'on souhaite que la lumière bouge avec la camera
-					lightPos[0]=Vec3Df::dotProduct(rightVector,sceneLights[l].getPos());
-					lightPos[1]=Vec3Df::dotProduct(upVector,sceneLights[l].getPos());
-					lightPos[2]=Vec3Df::dotProduct(-direction,sceneLights[l].getPos());
-					lightPos+=camPos;
-					bool visible = true;
-					Vec3Df directionToLight = lightPos - pointWS;
-					directionToLight.normalize();
-					for (unsigned int k = 0; k < scene->getObjects().size (); k++) 
+					sceneAreaLights[l].discretize(NB_POINT_DISC);
+					const vector<Vec3Df>& discretization = sceneAreaLights[l].getDiscretization();
+					for(unsigned n=0; n<NB_POINT_DISC; n++)
 					{
-						Vertex intersectionPointTemp;
-						const Object & oTemp = scene->getObjects()[k];
-						Ray rayPointToLight(pointWS-oTemp.getTrans(), directionToLight);
-						if (rayPointToLight.intersectObject (oTemp, intersectionPointTemp))
+						Vec3Df lightPos=discretization[n];
+						lightPos[0]=Vec3Df::dotProduct(rightVector,sceneAreaLights[l].getPos());
+						lightPos[1]=Vec3Df::dotProduct(upVector,sceneAreaLights[l].getPos());
+						lightPos[2]=Vec3Df::dotProduct(-direction,sceneAreaLights[l].getPos());
+						lightPos+=camPos;
+						Vec3Df directionToLight = lightPos - pointWS;
+						directionToLight.normalize();
+						for (unsigned int k = 0; k < scene->getObjects().size (); k++) 
 						{
-							visible=false;
-							break;
+							Vertex intersectionPointTemp;
+							const Object & oTemp = scene->getObjects()[k];
+							Ray rayPointToLight(pointWS-oTemp.getTrans(), directionToLight);
+							if (rayPointToLight.intersectObject (oTemp, intersectionPointTemp))
+							{
+								visibility--;
+								break;
+							}
 						}
 					}
+					float visibilityF=visibility/NB_POINT_DISC;
 
-					if(visible)
+					if(visibility>0)
 					{
+						Vec3Df lightPos=sceneAreaLights[l].getPos();
+						lightPos[0]=Vec3Df::dotProduct(rightVector,sceneAreaLights[l].getPos());
+						lightPos[1]=Vec3Df::dotProduct(upVector,sceneAreaLights[l].getPos());
+						lightPos[2]=Vec3Df::dotProduct(-direction,sceneAreaLights[l].getPos());
+						lightPos+=camPos;
+						Vec3Df directionToLight = lightPos - pointWS;
+						directionToLight.normalize();
 						Vec3Df normal=intersectionPoint.getNormal()/intersectionPoint.getNormal().getLength();
 
 						float diff = Vec3Df::dotProduct(normal, directionToLight);
@@ -131,8 +144,46 @@ QImage RayTracer::render (const Vec3Df & camPos,
 						float spec = Vec3Df::dotProduct(r, -dir); 
 						if(spec <= 0.0f)
 							spec=0.0f;
-						c += sceneLights[l].getIntensity()*(material.getDiffuse()*diff + material.getSpecular()*spec)*sceneLights[l].getColor()*material.getColor();
+						c += visibilityF*sceneAreaLights[l].getIntensity()*(material.getDiffuse()*diff + material.getSpecular()*spec)*sceneAreaLights[l].getColor()*material.getColor();
 					}
+					// Ombres dures
+					/*					Vec3Df pointWS = intersectionPoint.getPos()+o.getTrans();
+
+										Vec3Df lightPos=sceneAreaLights[l].getPos();
+										lightPos[0]=Vec3Df::dotProduct(rightVector,sceneAreaLights[l].getPos());
+										lightPos[1]=Vec3Df::dotProduct(upVector,sceneAreaLights[l].getPos());
+										lightPos[2]=Vec3Df::dotProduct(-direction,sceneAreaLights[l].getPos());
+										lightPos+=camPos;
+										bool visible = true;
+										Vec3Df directionToLight = lightPos - pointWS;
+										directionToLight.normalize();
+										for (unsigned int k = 0; k < scene->getObjects().size (); k++) 
+										{
+										Vertex intersectionPointTemp;
+										const Object & oTemp = scene->getObjects()[k];
+										Ray rayPointToLight(pointWS-oTemp.getTrans(), directionToLight);
+										if (rayPointToLight.intersectObject (oTemp, intersectionPointTemp))
+										{
+										visible=false;
+										break;
+										}
+										}
+
+										if(visible)
+										{
+										Vec3Df normal=intersectionPoint.getNormal()/intersectionPoint.getNormal().getLength();
+
+										float diff = Vec3Df::dotProduct(normal, directionToLight);
+										Vec3Df r = 2*diff*normal-directionToLight;
+										if(diff<=0.0f)
+										diff=0.0f;
+										r.normalize();
+										float spec = Vec3Df::dotProduct(r, -dir); 
+										if(spec <= 0.0f)
+										spec=0.0f;
+										c += sceneAreaLights[l].getIntensity()*(material.getDiffuse()*diff + material.getSpecular()*spec)*sceneAreaLights[l].getColor()*material.getColor();
+										}
+					 */
 				}
 				c=255.0f*c;
 			}

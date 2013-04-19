@@ -29,7 +29,7 @@ public:
     inline void setIntensity (float i) { intensity = i; }
 
     
-private:
+protected:
     Vec3Df pos;
     Vec3Df color;
     float intensity;
