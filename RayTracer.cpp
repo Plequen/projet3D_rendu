@@ -58,7 +58,7 @@ QImage RayTracer::render (const Vec3Df & camPos,
 			bool softShadows=true;
 			bool hardShadows=false;
 			unsigned nbRaysPerPixel=2; // 2 => distribution 2*2, 3 => distribution 3*3, etc 
-			unsigned nbPointsDisc = 10; // nombre de point répartis aléatoirement sur la source étendue
+			unsigned nbPointsDisc = 20; // nombre de point répartis aléatoirement sur la source étendue
 
 			float tanX = tan (fieldOfView)*aspectRatio;
 			float tanY = tan (fieldOfView);
