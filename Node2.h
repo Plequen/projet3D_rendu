@@ -1,17 +1,17 @@
-#ifndef NODE_H
-#define NODE_H
+#ifndef NODE2_H
+#define NODE2_H
 
 #include <iostream>
 #include <vector>
 #include "Mesh.h"
 #include "BoundingBox.h"
 
-enum Axis {X = 0, Y = 1, Z = 2};
 using namespace std;
+enum Axis {X, Y, Z};
 
 class KDTree;
 
-class Node
+class Node2
 {
 	friend class KDTree;
 	public :
