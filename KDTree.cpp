@@ -10,7 +10,7 @@ Node* KDTree::getRoot() const
 
 void KDTree::buildKDTree(const Mesh& m)
 {
-	depthMax=10;
+	depthMax=7;
 	const vector<Vertex>& vertices = m.getVertices();
 
 	vector<unsigned> triangles;
@@ -42,8 +42,6 @@ Node* KDTree::build(const vector<unsigned>& triangles, const Mesh& m, const Boun
 		BoundingBox bBoxRight, bBoxLeft;
 
 		splitBBox(bbToFitIn, bBoxRight, bBoxLeft, maxAxis, medianSample);
-
-		n = new Node(bbToFitIn, depth);
 
 		vector<unsigned> trianglesRight;
 		vector<unsigned> trianglesLeft;

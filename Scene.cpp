@@ -49,20 +49,21 @@ void Scene::buildDefaultScene () {
     Material groundMat;
     Object ground (groundMesh, groundMat);    
     objects.push_back (ground);
+/*
     Mesh ramMesh;
     ramMesh.loadOFF ("models/ram.off");
     Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f));
     Object ram (ramMesh, ramMat);
     ram.setTrans (Vec3Df (1.f, 0.5f, 0.f));
     objects.push_back (ram);
-/*
+*/
     Mesh monkeyMesh;
     monkeyMesh.loadOFF ("models/monkey.off");
     Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f));
     Object monkey (monkeyMesh, ramMat);
-    monkey.setTrans (Vec3Df (1.f, 0.5f, 0.f));
+    monkey.setTrans (Vec3Df (0.0f, 0.0f, 1.0f));
     objects.push_back (monkey);
-*/  
+/*
     Mesh rhinoMesh;
     rhinoMesh.loadOFF ("models/rhino.off");
     Material rhinoMat (1.0f, 0.2f, Vec3Df (0.6f, 0.6f, 0.7f));
@@ -75,7 +76,6 @@ void Scene::buildDefaultScene () {
     Object garg (gargMesh, gargMat);
     garg.setTrans (Vec3Df (-1.f, 1.0f, 0.1f));
     objects.push_back (garg);
-/*
     Mesh test;
     test.loadOFF ("models/testMesh2.off");
     Material groundMat;
