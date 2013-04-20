@@ -42,7 +42,7 @@ public:
     inline const BoundingBox & getBoundingBox () const { return bbox; }
     void updateBoundingBox ();
 
-	bool intersectsRay(Ray& ray, Vertex& intersectionPoint, unsigned int& leafId) const;
+	bool intersectsRay(Ray& ray, Vertex& intersectionPoint, float& t, unsigned int& leafId) const;
     
 private:
     Mesh mesh;

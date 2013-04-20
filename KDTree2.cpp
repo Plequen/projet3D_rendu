@@ -155,8 +155,7 @@ void KDTree2::swap(vector<Vec3Df>& points, int i, int j) {
 //
 // Intersection with a Ray
 //
-bool KDTree2::intersectsRay(const Mesh& mesh, Ray& ray, Vertex& intersectionPoint, unsigned int& leafId) const {
-	float t = INFINITE_DISTANCE;
+bool KDTree2::intersectsRay(const Mesh& mesh, Ray& ray, Vertex& intersectionPoint, float& t, unsigned int& leafId) const {
 	return rayIntersectsNode(mesh, ray, root, intersectionPoint, t, leafId);	
 }
 
@@ -184,13 +183,14 @@ bool KDTree2::rayIntersectsNode(const Mesh& mesh, Ray& ray, KDTreeNode* node, Ve
 		}
 		return false;
 	}
+
 	// the current node is a leaf
 	bool hasIntersection = false;
 	const vector<Vertex>& vertices = mesh.getVertices();
 	const vector<Triangle>& triangles = mesh.getTriangles();
 	unsigned int* tIndices = node->getTIndices();
 	for (unsigned int i = 0 ; i < node->getTNumber() ; i++) {
-		float tTemp = INFINITE_DISTANCE, alpha, beta; 
+		float tTemp, alpha, beta; 
 		const Vec3Df& v0 = vertices[triangles[tIndices[i]].getVertex(0)].getPos();
 		const Vec3Df& v1 = vertices[triangles[tIndices[i]].getVertex(1)].getPos();
 		const Vec3Df& v2 = vertices[triangles[tIndices[i]].getVertex(2)].getPos();
@@ -200,7 +200,7 @@ bool KDTree2::rayIntersectsNode(const Mesh& mesh, Ray& ray, KDTreeNode* node, Ve
 			t = tTemp;
 			leafId = node->getLeafId();
 			intersectionPoint.setPos(ray.getOrigin() + t * ray.getDirection());
-			intersectionPoint.setNormal((1-alpha-beta)*vertices[triangles[tIndices[i]].getVertex(0)].getNormal()+alpha*vertices[triangles[tIndices[i]].getVertex(1)].getNormal()+beta*vertices[triangles[tIndices[i]].getVertex(2)].getNormal()); 
+			intersectionPoint.setNormal((1-alpha-beta)*vertices[triangles[tIndices[i]].getVertex(0)].getNormal() + alpha*vertices[triangles[tIndices[i]].getVertex(1)].getNormal() + beta*vertices[triangles[tIndices[i]].getVertex(2)].getNormal()); 
 		}
 	}
 	return hasIntersection;

@@ -18,7 +18,7 @@ public :
 	void quickSort(std::vector<Vec3Df>& points, int left, int right, Axis axis);
 	int partition(std::vector<Vec3Df>& points, int left, int right, int pivot, Axis axis);
 	void swap(std::vector<Vec3Df>& points, int i, int j);
-	bool intersectsRay(const Mesh& mesh, Ray& ray, Vertex& intersectionPoint, unsigned int& leafId) const;
+	bool intersectsRay(const Mesh& mesh, Ray& ray, Vertex& intersectionPoint, float& t, unsigned int& leafId) const;
 
 private :
 	class KDTreeNode { 

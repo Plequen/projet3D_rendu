@@ -31,8 +31,8 @@ Object::Object (const Mesh & mesh, const Material & mat) : mesh (mesh), mat (mat
 
 	std::cout << "kdtree2 built" << std::endl << std::endl;
 }
-bool Object::intersectsRay(Ray& ray, Vertex& intersectionPoint, unsigned int& leafId) const {
-	return kdTree2.intersectsRay(mesh, ray, intersectionPoint, leafId);
+bool Object::intersectsRay(Ray& ray, Vertex& intersectionPoint, float& t, unsigned int& leafId) const {
+	return kdTree2.intersectsRay(mesh, ray, intersectionPoint, t, leafId);
 }
 
 void Object::updateBoundingBox () {
