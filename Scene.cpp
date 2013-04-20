@@ -58,10 +58,10 @@ void Scene::buildDefaultScene () {
     objects.push_back (ram);
 */
     Mesh monkeyMesh;
-    monkeyMesh.loadOFF ("models/monkey.off");
+    monkeyMesh.loadOFF ("models/testMesh2.off");
     Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f));
     Object monkey (monkeyMesh, ramMat);
-    monkey.setTrans (Vec3Df (0.0f, 0.0f, 1.0f));
+    monkey.setTrans (Vec3Df (0.0f, 0.0f, 3.0f));
     objects.push_back (monkey);
 /*
     Mesh rhinoMesh;

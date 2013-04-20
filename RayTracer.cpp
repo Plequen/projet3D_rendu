@@ -55,10 +55,10 @@ QImage RayTracer::render (const Vec3Df & camPos,
 		for (unsigned int j = 0; j < screenHeight; j++) 
 		{
 			//Paramètres variables
-			bool softShadows=false;
+			bool softShadows=true;
 			bool hardShadows=false;
-			unsigned nbRaysPerPixel=1; // 2 => distribution 2*2, 3 => distribution 3*3, etc 
-			unsigned nbPointsDisc = 30; // nombre de point répartis aléatoirement sur la source étendue
+			unsigned nbRaysPerPixel=2; // 2 => distribution 2*2, 3 => distribution 3*3, etc 
+			unsigned nbPointsDisc = 10; // nombre de point répartis aléatoirement sur la source étendue
 
 			float tanX = tan (fieldOfView)*aspectRatio;
 			float tanY = tan (fieldOfView);
@@ -74,7 +74,7 @@ QImage RayTracer::render (const Vec3Df & camPos,
 			float smallestIntersectionDistance = 1000000.f;
 			Vec3Df c (backgroundColor);
 			bool hasIntersection=false;  
-			vector<Vec3Df> miniSteps;  // Pour créer des points espacés régulirement à l'intérieur de la scène
+			vector<Vec3Df> miniSteps;  // Pour créer des points espacés régulirement à l'intérieur du pixel
 			miniSteps.resize(nbRaysPerPixel*nbRaysPerPixel);
 			vector<Vec3Df> colors; // c sera la moyenne des couleurs obtenu pour chaque rayon du pixel
 			colors.resize(nbRaysPerPixel*nbRaysPerPixel);
@@ -178,7 +178,7 @@ QImage RayTracer::render (const Vec3Df & camPos,
 									}
 								}
 							}
-						}
+						}// On a fini de traiter les ombres douces
 
 						//Si l'on veut représenter des ombres dures
 						//On ne considére que des sources ponctuelles
@@ -225,10 +225,11 @@ QImage RayTracer::render (const Vec3Df & camPos,
 							//l'intensité est plus ou moins forte selon que le point est plus ou moins eclairé
 							colors[r]*=visibility;
 						}
-					}
-				}
+					}// On a fini de traiter chacune des lumières de la scène
+				}// On a fini de calculer la couleur du pixel lorsqu'un rayon intersecte la scène
 				c+=colors[r];
-			}
+			}// On a traité tous les rayons envoyés à l'intérieur d'un même pixel
+
 			c=255.0f*c/colors.size(); // On fait la moyenne de la couleur obtenue pour chaque rayon;
 			image.setPixel (i, j, qRgb (clamp (c[0], 0, 255), clamp (c[1], 0, 255), clamp (c[2], 0, 255)));
 		}
