@@ -18,31 +18,11 @@
 #include "Material.h"
 #include "BoundingBox.h"
 
+
 class Object {
 public:
     inline Object () {}
-    inline Object (const Mesh & mesh, const Material & mat) : mesh (mesh), mat (mat) {
-        updateBoundingBox ();
-	int inter = 1;
-	std::cout << "building kdtree" << std::endl;
-	clock_t begin = clock();
-	for (int i = 0 ; i < inter ; i++)
-		kdtree.buildKDTree(mesh);
-	clock_t end = clock();
-	double sec1 = (double) ( end-begin ) / CLOCKS_PER_SEC;
-	cout << "KDTree build v1 : " << sec1 << "sec" << endl;
-//	kdtree.printTree();
-	std::cout << "kdtree built" << std::endl;
-	std::cout << "building kdtree2" << std::endl;
-	begin = clock();
-	for (int i = 0 ; i < inter ; i++)
-		kdTree2.buildKDTree(&(this->mesh));
-	end = clock();
-	double sec2 = (double) ( end-begin ) / CLOCKS_PER_SEC;
-	cout << "KDTree build v2 : " << sec2 << "sec" << endl;
-
-	std::cout << "kdtree2 built" << std::endl << std::endl;
-    }
+	Object (const Mesh & mesh, const Material & mat);
     virtual ~Object () {}
 
     inline const Vec3Df & getTrans () const { return trans;}
@@ -53,12 +33,16 @@ public:
     
     inline const KDTree & getKDTree () const { return kdtree; }
     inline KDTree & getKDTree () { return kdtree; }
+    inline const KDTree2& getKDTree2 () const { return kdTree2; }
+    inline KDTree2& getKDTree2 () { return kdTree2; }
 
     inline const Material & getMaterial () const { return mat; }
     inline Material & getMaterial () { return mat; }
 
     inline const BoundingBox & getBoundingBox () const { return bbox; }
     void updateBoundingBox ();
+
+	bool intersectsRay(Ray& ray, Vertex& intersectionPoint, unsigned int& leafId) const;
     
 private:
     Mesh mesh;

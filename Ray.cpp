@@ -113,7 +113,8 @@ bool Ray::intersect (const BoundingBox & bbox, Vec3Df & intersectionPoint) const
 		}
 	return (true);			
 }
-bool Ray::intersectObject(const Object & o, Vec3Df & intersectionPoint, Vec3Df & normal) const
+
+/*bool Ray::intersectObject(const Object & o, Vec3Df & intersectionPoint, Vec3Df & normal) const
 {
 	bool intersection=false;
 	const Mesh & m = o.getMesh();
@@ -203,91 +204,8 @@ bool Ray::intersectObject(const Object & o, Vec3Df & intersectionPoint, Vec3Df &
 	}
 
 	return intersection;
-}
-/*
-   bool Ray::intersectObject(const Object & o, Vec3Df & intersectionPoint, Vec3Df & normal) const
-   {
-   bool intersection=false;
-   const Mesh & m = o.getMesh();
-   const KDTree & kdtree = o.getKDTree();
-   Node* node = kdtree.getRoot();
-   stack<Node*> stackNode;
-   const std::vector<Triangle> & triangles = m.getTriangles();
-   const std::vector<Vertex> & vertices = m.getVertices();
-   float t;
-   float tmin = 10000.0f;
-   float coef1, coef2;
-   float coefBary1, coefBary2;
-   unsigned tri;
+}*/
 
-   bool end = false;
-   while(!end)
-   {
-   if(node->isLeaf())
-   {
-   const vector<unsigned>& trianglesLeaf = node->getTriangles();
-   for(unsigned i=0; i<trianglesLeaf.size(); i++)
-   {	
-   const Vec3Df & va = vertices[triangles[trianglesLeaf[i]].getVertex(0)].getPos();
-   const Vec3Df & vb = vertices[triangles[trianglesLeaf[i]].getVertex(1)].getPos();
-   const Vec3Df & vc = vertices[triangles[trianglesLeaf[i]].getVertex(2)].getPos();
-   if(intersectTriangle(va, vb, vc, t, coef1, coef2))
-   {
-   intersection=true;
-   if(t < tmin)
-   {
-   tmin=t;
-   coefBary1=coef1;
-   coefBary2=coef2;
-   tri=trianglesLeaf[i];
-   }
-   }
-   }
-   if(stackNode.size()==0)
-   end=true;
-   else
-   {	
-   node=stackNode.top();
-   stackNode.pop();
-   }
-   } 
-
-   else
-   {
-   if(node->getLeftChild()!=NULL)
-   {
-   if(node->getRightChild()!=NULL)
-   stackNode.push(node->getRightChild());
-   node=node->getLeftChild();
-   }
-   else if(node->getRightChild()!=NULL)
-   node=node->getLeftChild();
-   else 
-   {
-   if(stackNode.size()==0)
-   end=true;
-   else
-   {	
-   node=stackNode.top();
-   stackNode.pop();
-   }
-   }
-
-
-   }	 
-}
-
-if(intersection)
-{
-	intersectionPoint = origin + tmin*direction;
-	normal=(1-coefBary1-coefBary2)*vertices[triangles[tri].getVertex(0)].getNormal()
-		+ coefBary1*vertices[triangles[tri].getVertex(1)].getNormal()
-		+ coefBary2*vertices[triangles[tri].getVertex(2)].getNormal();
-}
-
-return intersection;
-}
-*/
 bool Ray::intersectTriangle(const Vec3Df& va, const Vec3Df & vb, const Vec3Df & vc, float & t, float & coef1, float & coef2) const
 {
 	float M;

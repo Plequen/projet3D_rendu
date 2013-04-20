@@ -63,56 +63,70 @@ QImage RayTracer::render (const Vec3Df & camPos,
 			Vec3Df stepY = (float (j) - screenHeight/2.f)/screenHeight * tanY * upVector;
 			Vec3Df step = stepX + stepY;
 			Vec3Df dir = direction + step;
-			dir.normalize ();
-			Vec3Df intersectionPoint;
-			Vec3Df normal;
+			dir.normalize();
+
+			bool hasIntersection = false;
+			Vertex intersection;
+			unsigned int leafId;
+			unsigned int intersectedObject;
+			Vertex intersectedVertex;
+			unsigned int intersectedLeafId;
+			Vec3Df c(backgroundColor);
+			// search the nearest intersection point between the ray and the scene
 			float smallestIntersectionDistance = 1000000.f;
-			Vec3Df c (backgroundColor);
-			for (unsigned int k = 0; k < scene->getObjects().size (); k++) 
-			{
-				const Object & o = scene->getObjects()[k];
-				Ray ray (camPos-o.getTrans (), dir);
-				if (ray.intersectObject (o, intersectionPoint, normal))
-				{	
-					float intersectionDistance = Vec3Df::squaredDistance (intersectionPoint + o.getTrans (), camPos);
-					if (intersectionDistance < smallestIntersectionDistance) 
-					{
-						c = Vec3Df(0.0f,0.0f,0.0f);
-						Material material = o.getMaterial();
-						normal.normalize();
-						std::vector<Light> sceneLights = scene->getLights();
-						for(unsigned l=0; l < sceneLights.size(); l++)
-						{
-							/***   Phong Shading   ****/
-
-							//On place la lumiere dans le repere de la camera
-							Vec3Df lightPosCamSpace;
-							lightPosCamSpace[0]=Vec3Df::dotProduct(rightVector,sceneLights[l].getPos());
-							lightPosCamSpace[1]=Vec3Df::dotProduct(upVector,sceneLights[l].getPos());
-							lightPosCamSpace[2]=Vec3Df::dotProduct(-direction,sceneLights[l].getPos());
-							lightPosCamSpace+=camPos;
-
-							Vec3Df lightDirection = lightPosCamSpace - (intersectionPoint + o.getTrans());
-							lightDirection.normalize();
-							float diff = Vec3Df::dotProduct(normal, lightDirection);
-							Vec3Df r = 2*diff*normal-lightDirection;
-							if(diff<=0.0f)
-								diff=0.0f;
-							r.normalize();
-							Vec3Df v = -(intersectionPoint+o.getTrans());
-							v.normalize();
-							float spec = Vec3Df::dotProduct(r, -dir); 
-							if(spec <= 0.0f)
-								spec=0.0f;
-							c += sceneLights[l].getIntensity()*(material.getDiffuse()*diff + material.getSpecular()*spec)*sceneLights[l].getColor()*material.getColor();
-
-						}
-						c=255.0f*c;
+			for (unsigned int k = 0 ; k < scene->getObjects().size() ; k++) {
+				const Object& o = scene->getObjects()[k];
+				Ray ray (camPos - o.getTrans(), dir);
+				if (o.intersectsRay(ray, intersection, leafId)) {
+					hasIntersection = true;	
+					float intersectionDistance = Vec3Df::squaredDistance(intersection.getPos() + o.getTrans(), camPos);
+					if (intersectionDistance < smallestIntersectionDistance) {
+						intersectedVertex = intersection;
+						intersectedObject = k;
+						intersectedLeafId = leafId;
 						smallestIntersectionDistance = intersectionDistance;
 					}
 				}
 			}
-			image.setPixel (i, j, qRgb (clamp (c[0], 0, 255), clamp (c[1], 0, 255), clamp (c[2], 0, 255)));
+			// compute the color to give to the current pixel
+			if (hasIntersection) {
+				const Object& o = scene->getObjects()[intersectedObject];
+				const Material& material = o.getMaterial();
+				const Vec3Df& intersectedPoint = intersectedVertex.getPos();
+				Vec3Df normal = intersectedVertex.getNormal();
+				normal.normalize();
+				vector<Light>& sceneLights = scene->getLights();
+				// color the pixel following the leaf it belongs to in the kdtree
+				c = Vec3Df(intersectedLeafId % 3 == 0 ? 1.0f : 0.0f, intersectedLeafId % 3 == 1 ? 1.0f : 0.0f, intersectedLeafId % 3 == 2 ? 1.0f : 0.0f);
+				//
+				// Phong Shading
+				//
+				c = Vec3Df(0.0f, 0.0f, 0.0f);
+				for (unsigned int k = 0 ; k < sceneLights.size() ; k++) {
+					// Let's put the light in the camera reference system
+					Vec3Df lightPosCamSpace;
+					lightPosCamSpace[0] = Vec3Df::dotProduct(rightVector, sceneLights[k].getPos());
+					lightPosCamSpace[1] = Vec3Df::dotProduct(upVector, sceneLights[k].getPos());
+					lightPosCamSpace[2] = Vec3Df::dotProduct(-direction, sceneLights[k].getPos());
+					lightPosCamSpace += camPos;
+			
+					Vec3Df lightDirection = lightPosCamSpace - (intersectedPoint + o.getTrans());
+					lightDirection.normalize();
+					float diff = Vec3Df::dotProduct(normal, lightDirection);
+					Vec3Df r = 2 * diff * normal - lightDirection;
+					if (diff <= 0.0f)
+						diff = 0.0f;
+					r.normalize();
+					Vec3Df v = - (intersectedPoint + o.getTrans());
+					v.normalize();
+					float spec = Vec3Df::dotProduct(r, -dir); 
+					if (spec <= 0.0f)
+						spec = 0.0f;
+					c += sceneLights[k].getIntensity() * (material.getDiffuse() * diff + material.getSpecular() * spec) * sceneLights[k].getColor() * material.getColor();
+				}
+			}
+			c *= 255.0f;
+			image.setPixel(i, j, qRgb(clamp(c[0], 0, 255), clamp(c[1], 0, 255), clamp(c[2], 0, 255)));
 		}
 	}
 	progressDialog.setValue (100);
