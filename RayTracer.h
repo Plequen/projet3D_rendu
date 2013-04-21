@@ -33,6 +33,7 @@ public:
 	void setPercentageAO(float p) { percentageAO = p; } 
 	void setConeAO(float c) { coneAO = c; } 
 	void setIntensityAO(float i) { intensityAO = i; } 
+	void setLightDiscretization(int d) { nbPointsDisc = d; } 
     
     QImage render (const Vec3Df & camPos,
                    const Vec3Df & viewDirection,
@@ -44,7 +45,7 @@ public:
                    unsigned int screenHeight);
     
 protected:
-    inline RayTracer() : antialiasingMode(None), shadowsMode(NoShadows), ambientOcclusionMode(AODisabled), aaGrid(1), raysAO(10), percentageAO(0.05f), coneAO(180.f), intensityAO(0.1f) {}
+    inline RayTracer() : antialiasingMode(None), shadowsMode(NoShadows), ambientOcclusionMode(AODisabled), aaGrid(1), raysAO(10), percentageAO(0.05f), coneAO(180.f), intensityAO(0.1f), nbPointsDisc(50) {}
     inline virtual ~RayTracer () {}
     
 private:
@@ -57,6 +58,7 @@ private:
 	float percentageAO;
 	float coneAO;
  	float intensityAO;
+	unsigned int nbPointsDisc; // nb of points on the area light source (discretization)
 };
 
 

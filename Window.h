@@ -44,6 +44,7 @@ public slots :
 	void setRadiusAO(int r);
 	void setConeAO(int c);
 	void setIntensityAO(int i);
+	void setLightDiscretization(int i);
     
 private :
     void initControlWidget ();
@@ -61,6 +62,8 @@ private :
 	QLabel* radiusAOLabel;
 	QLabel* coneAOLabel;
 	QLabel* intensityAOLabel;
+	QLabel* softShadowsLabel;
+	QRadioButton* softShadowsButton; 
 };
 
 #endif // WINDOW_H

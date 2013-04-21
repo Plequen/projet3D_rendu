@@ -47,9 +47,6 @@ QImage RayTracer::render(const Vec3Df& camPos,
 	QImage image (QSize (screenWidth, screenHeight), QImage::Format_RGB888);
 	Scene * scene = Scene::getInstance ();
 
-	// variable parameters
-	unsigned nbPointsDisc = 100; // nb of points on the area light source (discretization)
-
 	QProgressDialog progressDialog ("Raytracing...", "Cancel", 0, 100);
 	progressDialog.show ();
 	unsigned int raysPerPixel = antialiasingMode == Uniform ? aaGrid : 1;

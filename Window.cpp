@@ -137,6 +137,14 @@ void Window::setIntensityAO(int i) {
 	intensityAOLabel->setText(QString::number(intensity));
 }
 
+void Window::setLightDiscretization(int d) {
+	RayTracer::getInstance()->setLightDiscretization(d);
+	RayTracer::getInstance()->setShadowsMode(static_cast<int>(RayTracer::Soft));
+	softShadowsLabel->setText(QString::number(d));
+	softShadowsButton->setChecked(true);	
+
+}
+
 void Window::setBGColor () {
     QColor c = QColorDialog::getColor (QColor (133, 152, 181), this);
     if (c.isValid () == true) {
@@ -192,11 +200,12 @@ void Window::initControlWidget2() {
 	antialiasingSlider->setRange(1, 10);
 	antialiasingLabel = new QLabel("1", rayGroupBox);
 	connect(antialiasingSlider, SIGNAL(valueChanged(int)), this, SLOT(setAAGrid(int)));
+	antialiasingSlider->setValue(1);
 
 	QHBoxLayout* uniformAALayout = new QHBoxLayout();
 	rayLayout->addWidget(aaLabel);
 	rayLayout->addWidget(noAA);
-	rayLayout->addWidget(uniformAA);
+	uniformAALayout->addWidget(uniformAA);
 	uniformAALayout->addWidget(antialiasingSlider);
 	uniformAALayout->addWidget(antialiasingLabel);
 	rayLayout->addLayout(uniformAALayout);
@@ -207,17 +216,26 @@ void Window::initControlWidget2() {
 	QButtonGroup* shadowsButtonGroup = new QButtonGroup(rayGroupBox);
 	QRadioButton* noShadowsButton = new QRadioButton("None", rayGroupBox);
 	QRadioButton* hardShadowsButton = new QRadioButton("Hard", rayGroupBox);
-	QRadioButton* softShadowsButton = new QRadioButton("Soft", rayGroupBox);
+	softShadowsButton = new QRadioButton("Soft", rayGroupBox);
 	shadowsButtonGroup->addButton(noShadowsButton, static_cast<int>(RayTracer::NoShadows)); 
 	shadowsButtonGroup->addButton(hardShadowsButton, static_cast<int>(RayTracer::Hard)); 
 	shadowsButtonGroup->addButton(softShadowsButton, static_cast<int>(RayTracer::Soft)); 
 	noShadowsButton->setChecked(true);
+	QHBoxLayout* softShadowsLayout = new QHBoxLayout();
+	QSlider* softShadowsSlider = new QSlider(Qt::Horizontal, rayGroupBox);
+	softShadowsSlider->setRange(1, 200);
+	softShadowsSlider->setValue(50);
+	softShadowsLabel = new QLabel("50", rayGroupBox);
+	softShadowsLayout->addWidget(softShadowsButton);
+	softShadowsLayout->addWidget(softShadowsSlider);
+	softShadowsLayout->addWidget(softShadowsLabel);
+	connect(softShadowsSlider, SIGNAL(valueChanged(int)), this, SLOT(setLightDiscretization(int)));
 	connect(shadowsButtonGroup, SIGNAL(buttonClicked(int)), this, SLOT(setShadowsMode(int)));
 
 	rayLayout->addWidget(shadowsLabel);
 	rayLayout->addWidget(noShadowsButton);
 	rayLayout->addWidget(hardShadowsButton);
-	rayLayout->addWidget(softShadowsButton);
+	rayLayout->addLayout(softShadowsLayout);
 
 	// Ambient Occlusion settings
 	QLabel* aoLabel = new QLabel("Ambient Occlusion", rayGroupBox);
@@ -232,9 +250,10 @@ void Window::initControlWidget2() {
 	connect(aoButtonGroup, SIGNAL(buttonClicked(int)), this, SLOT(setAOMode(int)));
 
 	QHBoxLayout* raysAOLayout = new QHBoxLayout();
-	QLabel* raysAOLabel0 = new QLabel("Rays : ", rayGroupBox);
+	QLabel* raysAOLabel0 = new QLabel("Rays ", rayGroupBox);
 	QSlider* raysAOSlider = new QSlider(Qt::Horizontal, rayGroupBox);
 	raysAOSlider->setRange(1, 255);
+	raysAOSlider->setValue(10);
 	raysAOLabel = new QLabel("10", rayGroupBox);
 	connect(raysAOSlider, SIGNAL(valueChanged(int)), this, SLOT(setRaysAO(int)));
 	raysAOLayout->addWidget(raysAOLabel0);
@@ -242,9 +261,10 @@ void Window::initControlWidget2() {
 	raysAOLayout->addWidget(raysAOLabel);
 
 	QHBoxLayout* radiusAOLayout = new QHBoxLayout();
-	QLabel* radiusAOLabel0 = new QLabel("Radius : ", rayGroupBox);
+	QLabel* radiusAOLabel0 = new QLabel("Radius ", rayGroupBox);
 	QSlider* radiusAOSlider = new QSlider(Qt::Horizontal, rayGroupBox);
 	radiusAOSlider->setRange(1, 100);
+	radiusAOSlider->setValue(5);
 	radiusAOLabel = new QLabel("5%", rayGroupBox);
 	connect(radiusAOSlider, SIGNAL(valueChanged(int)), this, SLOT(setRadiusAO(int)));
 	radiusAOLayout->addWidget(radiusAOLabel0);
@@ -252,9 +272,10 @@ void Window::initControlWidget2() {
 	radiusAOLayout->addWidget(radiusAOLabel);
 
 	QHBoxLayout* coneAOLayout = new QHBoxLayout();
-	QLabel* coneAOLabel0 = new QLabel("Cone : ", rayGroupBox);
+	QLabel* coneAOLabel0 = new QLabel("Cone ", rayGroupBox);
 	QSlider* coneAOSlider = new QSlider(Qt::Horizontal, rayGroupBox);
 	coneAOSlider->setRange(0, 180);
+	coneAOSlider->setValue(180);
 	coneAOLabel = new QLabel("180", rayGroupBox);
 	connect(coneAOSlider, SIGNAL(valueChanged(int)), this, SLOT(setConeAO(int)));
 	coneAOLayout->addWidget(coneAOLabel0);
@@ -262,9 +283,10 @@ void Window::initControlWidget2() {
 	coneAOLayout->addWidget(coneAOLabel);
 
 	QHBoxLayout* intensityAOLayout = new QHBoxLayout();
-	QLabel* intensityAOLabel0 = new QLabel("Intensity : ", rayGroupBox);
+	QLabel* intensityAOLabel0 = new QLabel("Intensity ", rayGroupBox);
 	QSlider* intensityAOSlider = new QSlider(Qt::Horizontal, rayGroupBox);
 	intensityAOSlider->setRange(0, 20);
+	intensityAOSlider->setValue(2);
 	intensityAOLabel = new QLabel("0.1", rayGroupBox);
 	connect(intensityAOSlider, SIGNAL(valueChanged(int)), this, SLOT(setIntensityAO(int)));
 	intensityAOLayout->addWidget(intensityAOLabel0);
