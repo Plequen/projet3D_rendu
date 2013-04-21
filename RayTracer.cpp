@@ -108,7 +108,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 								if (ob.intersectsRay(reflexionRay, intersectionReflexion,
 											distReflexion, leafIdReflexion)) {
 
-									dir=-(camPos-auxO.getTrans()-(intersectionReflexion.getPos()+ob.getTrans()));
+									dir=-(camPos-(intersectionReflexion.getPos()+ob.getTrans()));
 									dir.normalize();
 									intersectedObject=n;
 									intersectedVertex=intersectionReflexion;
