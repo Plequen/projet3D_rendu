@@ -45,6 +45,7 @@ public slots :
 	void setConeAO(int c);
 	void setIntensityAO(int i);
 	void setLightDiscretization(int i);
+	void setMirrorsMode(int m);
     
 private :
     void initControlWidget ();

@@ -22,6 +22,7 @@ public:
 	typedef enum {None = 0, Uniform = 1, Poisson = 2} AntialiasingMode;
 	typedef enum {NoShadows = 0, Hard = 1, Soft = 2} ShadowsMode;
 	typedef enum {AODisabled = 0, AOEnabled = 1, AOOnly = 2} AmbientOcclusionMode;
+	typedef enum {MDisabled = 0, MEnabled = 1} MirrorsMode;
 
     inline const Vec3Df & getBackgroundColor () const { return backgroundColor;}
     inline void setBackgroundColor (const Vec3Df & c) { backgroundColor = c; }
@@ -34,6 +35,7 @@ public:
 	void setConeAO(float c) { coneAO = c; } 
 	void setIntensityAO(float i) { intensityAO = i; } 
 	void setLightDiscretization(int d) { nbPointsDisc = d; } 
+	void setMirrorsMode(int m) { mirrorsMode = static_cast<MirrorsMode>(m); }
     
     QImage render (const Vec3Df & camPos,
                    const Vec3Df & viewDirection,
@@ -45,7 +47,7 @@ public:
                    unsigned int screenHeight);
     
 protected:
-    inline RayTracer() : antialiasingMode(None), shadowsMode(NoShadows), ambientOcclusionMode(AODisabled), aaGrid(1), raysAO(10), percentageAO(0.05f), coneAO(180.f), intensityAO(0.1f), nbPointsDisc(50) {}
+    inline RayTracer() : antialiasingMode(None), shadowsMode(NoShadows), ambientOcclusionMode(AODisabled), mirrorsMode(MDisabled), aaGrid(1), raysAO(10), percentageAO(0.05f), coneAO(180.f), intensityAO(0.1f), nbPointsDisc(50) {}
     inline virtual ~RayTracer () {}
     
 private:
@@ -53,6 +55,7 @@ private:
 	AntialiasingMode antialiasingMode;
 	ShadowsMode shadowsMode;
 	AmbientOcclusionMode ambientOcclusionMode;
+	MirrorsMode mirrorsMode;
 	unsigned int aaGrid;
 	unsigned int raysAO;
 	float percentageAO;

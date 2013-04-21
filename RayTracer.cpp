@@ -94,7 +94,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 						// if object o is a mirror
 						// then we do all the operations (shadows, phong shading, ambient occlusion)
 						// on the reflected point
-						if(scene->getObjects()[intersectedObject].getMaterial().isMirror())
+						if (mirrorsMode == MEnabled && scene->getObjects()[intersectedObject].getMaterial().isMirror())
 						{
 							const Object& auxO = scene->getObjects()[intersectedObject];
 							float distReflexion=INFINITE_DISTANCE;
@@ -176,7 +176,6 @@ QImage RayTracer::render(const Vec3Df& camPos,
 
 								if (shadowsMode == Hard) {
 									distShadow = INFINITE_DISTANCE;
-									bool shadowFound = false;
 									for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
 										const Object& ob = scene->getObjects()[n];
 										Ray shadowRay(intersectedPoint - ob.getTrans(), lightDirection);

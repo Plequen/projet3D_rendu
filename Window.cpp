@@ -142,7 +142,10 @@ void Window::setLightDiscretization(int d) {
 	RayTracer::getInstance()->setShadowsMode(static_cast<int>(RayTracer::Soft));
 	softShadowsLabel->setText(QString::number(d));
 	softShadowsButton->setChecked(true);	
+}
 
+void Window::setMirrorsMode(int m) {
+	RayTracer::getInstance()->setMirrorsMode(m);
 }
 
 void Window::setBGColor () {
@@ -301,8 +304,22 @@ void Window::initControlWidget2() {
 	rayLayout->addLayout(radiusAOLayout);
 	rayLayout->addLayout(coneAOLayout);
 	rayLayout->addLayout(intensityAOLayout);
-	
 
+	// mirrors settings
+	QLabel* mirrorsLabel = new QLabel("Mirrors", rayGroupBox);
+	QButtonGroup* mirrorsButtonGroup = new QButtonGroup(rayGroupBox);
+	QRadioButton* mirrorsDisabledButton = new QRadioButton("Disabled", rayGroupBox);
+	QRadioButton* mirrorsEnabledButton = new QRadioButton("Enabled", rayGroupBox);
+	mirrorsButtonGroup->addButton(mirrorsDisabledButton, static_cast<int>(RayTracer::MDisabled)); 
+	mirrorsButtonGroup->addButton(mirrorsEnabledButton, static_cast<int>(RayTracer::MEnabled)); 
+	mirrorsDisabledButton->setChecked(true);
+	connect(mirrorsButtonGroup, SIGNAL(buttonClicked(int)), this, SLOT(setMirrorsMode(int)));
+
+	rayLayout->addWidget(mirrorsLabel);
+	rayLayout->addWidget(mirrorsDisabledButton);
+	rayLayout->addWidget(mirrorsEnabledButton);
+
+	// other settings
 	QPushButton* rayButton = new QPushButton("Render", rayGroupBox);
 	rayLayout->addWidget(rayButton);
 	connect(rayButton, SIGNAL(clicked()), this, SLOT(renderRayImage()));
