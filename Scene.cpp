@@ -47,7 +47,7 @@ void Scene::updateBoundingBox () {
 void Scene::buildDefaultScene () {
     Mesh groundMesh;
     groundMesh.loadOFF ("models/ground.off");
-    Material groundMat;
+    Material groundMat(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.5f), true);
     Object ground (groundMesh, groundMat);    
     objects.push_back (ground);
     Mesh ramMesh;

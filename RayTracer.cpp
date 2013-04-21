@@ -49,20 +49,19 @@ QImage RayTracer::render(const Vec3Df& camPos,
 		unsigned int screenHeight) {
 	QImage image (QSize (screenWidth, screenHeight), QImage::Format_RGB888);
 	Scene * scene = Scene::getInstance ();
-	const BoundingBox & bbox = scene->getBoundingBox ();
-	const Vec3Df & minBb = bbox.getMin ();
-	const Vec3Df & maxBb = bbox.getMax ();
-	const Vec3Df rangeBb = maxBb - minBb;
+
+	// variable parameters
+	bool softShadows=true;
+	bool hardShadows=false;
+	unsigned nbPointsDisc = 100; // nb of points on the area light source (discretization)
+
 	QProgressDialog progressDialog ("Raytracing...", "Cancel", 0, 100);
 	progressDialog.show ();
+
 	for (unsigned int i = 0; i < screenWidth; i++) {
 		progressDialog.setValue ((100*i)/screenWidth);
 		for (unsigned int j = 0; j < screenHeight; j++) {
 
-			// variable parameters
-			bool softShadows=true;
-			bool hardShadows=false;
-			unsigned nbPointsDisc = 20; // nb of points on the area light source (discretization)
 
 			float tanX = tan (fieldOfView) * aspectRatio;
 			float tanY = tan (fieldOfView);
@@ -85,6 +84,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 					unsigned int intersectedObject;
 					Vertex intersectedVertex;
 					unsigned int intersectedLeafId;
+
 					// search the nearest intersection point between the ray and the scene
 					float smallestIntersectionDistance = INFINITE_DISTANCE;
 					for (unsigned int k = 0 ; k < scene->getObjects().size() ; k++) {
@@ -98,27 +98,59 @@ QImage RayTracer::render(const Vec3Df& camPos,
 							intersectedLeafId = leafId;
 						}
 					}
+
+
 					// compute the color to give to the current pixel
 					float distShadow;
 					Vertex intersectionShadow;
 					unsigned int leafIdShadow;
+
 					if (hasIntersection) {
-						const Object& o = scene->getObjects()[intersectedObject];
-						const Material& material = o.getMaterial();
-						const Vec3Df& intersectedPoint = intersectedVertex.getPos();
-						Vec3Df normal = intersectedVertex.getNormal();
-						normal.normalize();
 						vector<AreaLight>& sceneLights = scene->getAreaLights();
 						// color the pixel following the leaf it belongs to in the kdtree
 						//	c = Vec3Df(intersectedLeafId % 3 == 0 ? 1.0f : 0.0f, intersectedLeafId % 3 == 1 ? 1.0f : 0.0f, intersectedLeafId % 3 == 2 ? 1.0f : 0.0f);
 						//
 						// Phong Shading
 						//
+
+						// if object o is a mirror
+						// then we do all the operations (shadows, phong shading, ambient occlusion)
+						// on the point reflected
+						if(scene->getObjects()[intersectedObject].getMaterial().isMirror())
+						{
+							const Object& o = scene->getObjects()[intersectedObject];
+							float distReflexion=INFINITE_DISTANCE;
+							Vertex intersectionReflexion;
+							unsigned int leafIdReflexion;
+							Vec3Df reflectionDir = 2*Vec3Df::dotProduct(intersectedVertex.getNormal(), -dir)
+								*intersectedVertex.getNormal() + dir;
+							for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
+								const Object& ob = scene->getObjects()[n];
+								Ray reflexionRay(intersectedVertex.getPos() + o.getTrans() - ob.getTrans(),reflectionDir);
+								if (ob.intersectsRay(reflexionRay, intersectionReflexion,
+											distReflexion, leafIdReflexion)) {
+
+									dir=-(camPos-o.getTrans()-(intersectionReflexion.getPos()+ob.getTrans()));
+									dir.normalize();
+									intersectedObject=n;
+									intersectedVertex=intersectionReflexion;
+								}
+							}
+						}
+
+						const Object& o = scene->getObjects()[intersectedObject];
+						const Vec3Df& intersectedPoint = intersectedVertex.getPos();
+						const Material& material = o.getMaterial();
+						Vec3Df normal = intersectedVertex.getNormal();
+						normal.normalize();
+
 						for (unsigned int k = 0 ; k < sceneLights.size() ; k++) {
 							// intersected point in the world reference : intersectedPoint + o.getTrans()
 							// light position in the world reference : sceneLights[k].getPos()
 							// intersected point in the object reference : intersectedPoint
 							// light position in the object reference : sceneLights[k].getPos() - o.getTrans()
+
+
 							Vec3Df lightDirection = sceneLights[k].getPos() - (intersectedPoint + o.getTrans());
 							lightDirection.normalize();
 
@@ -126,7 +158,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 
 							// visibility is between O and 1, 0 if not visible, 1 is completely visible
 							float visibility = (float)nbPointsDisc;
-							
+
 							if(softShadows)
 							{
 								// random set of points on the area light source
@@ -141,7 +173,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 									Vec3Df directionToLightDisc = lightPosDisc - (intersectedPoint+o.getTrans());
 									directionToLightDisc.normalize();
 
-									
+
 									for (unsigned int n = 0; n < scene->getObjects().size (); n++) 
 									{
 										const Object& ob = scene->getObjects()[n];
@@ -153,11 +185,12 @@ QImage RayTracer::render(const Vec3Df& camPos,
 										}
 									}
 								}
+								visibility/=(float)nbPointsDisc;
+
 							}
 							else if(hardShadows)
 							{
 								distShadow = INFINITE_DISTANCE;
-								bool shadowFound = false;
 								for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
 									const Object& ob = scene->getObjects()[n];
 									Ray shadowRay(intersectedPoint + o.getTrans() - ob.getTrans(), lightDirection);
@@ -167,10 +200,11 @@ QImage RayTracer::render(const Vec3Df& camPos,
 									}
 								}
 							}
-							visibility/=(float)nbPointsDisc;
 
 							if (visibility<0.00001f)
-									continue;
+								continue;
+
+
 
 							float diff = Vec3Df::dotProduct(normal, lightDirection);
 							Vec3Df r = 2 * diff * normal - lightDirection;
