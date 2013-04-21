@@ -22,20 +22,20 @@
 
 
 class Window : public QMainWindow {
-    Q_OBJECT
+	Q_OBJECT
 public:
-    Window();
-    virtual ~Window();
+	Window();
+	virtual ~Window();
 
-    static void showStatusMessage (const QString & msg);  
+	static void showStatusMessage (const QString & msg);  
     
 public slots :
-    void renderRayImage ();
-    void setBGColor ();
-    void showRayImage ();
-    void exportGLImage ();
-    void exportRayImage ();
-    void about ();
+	void renderRayImage ();
+	void setBGColor ();
+	void showRayImage ();
+	void exportGLImage ();
+	void exportRayImage ();
+	void about ();
 	void setAAMode(int m);
 	void setAAGrid(int grid);  
 	void setShadowsMode(int m);  
@@ -46,17 +46,19 @@ public slots :
 	void setIntensityAO(int i);
 	void setLightDiscretization(int i);
 	void setMirrorsMode(int m);
+	void setRaysPT(int r);
+	void setIterationsPT(int i);
     
 private :
-    void initControlWidget ();
-    void initControlWidget2();
-        
-    QActionGroup * actionGroup;
-    QGroupBox * controlWidget;
-    QGroupBox* controlWidget2;
-    QString currentDirectory;
+	void initControlWidget ();
+	void initControlWidget2();
 
-    GLViewer * viewer;
+	QActionGroup * actionGroup;
+	QGroupBox * controlWidget;
+	QGroupBox* controlWidget2;
+	QString currentDirectory;
+
+	GLViewer * viewer;
 	QLabel* antialiasingLabel;		
 	QRadioButton* uniformAA;
 	QLabel* raysAOLabel;
@@ -65,6 +67,8 @@ private :
 	QLabel* intensityAOLabel;
 	QLabel* softShadowsLabel;
 	QRadioButton* softShadowsButton; 
+	QLabel* raysPTLabel;
+	QLabel* iterPTLabel;
 };
 
 #endif // WINDOW_H

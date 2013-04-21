@@ -148,6 +148,16 @@ void Window::setMirrorsMode(int m) {
 	RayTracer::getInstance()->setMirrorsMode(m);
 }
 
+void Window::setRaysPT(int r) {
+	RayTracer::getInstance()->setRaysPT(r);
+	raysPTLabel->setText(QString::number(r));
+}
+
+void Window::setIterationsPT(int i) {
+	RayTracer::getInstance()->setIterationsPT(i);
+	iterPTLabel->setText(QString::number(i));
+}
+
 void Window::setBGColor () {
     QColor c = QColorDialog::getColor (QColor (133, 152, 181), this);
     if (c.isValid () == true) {
@@ -318,6 +328,35 @@ void Window::initControlWidget2() {
 	rayLayout->addWidget(mirrorsLabel);
 	rayLayout->addWidget(mirrorsDisabledButton);
 	rayLayout->addWidget(mirrorsEnabledButton);
+
+	// path-tracing settings
+	QLabel* ptLabel = new QLabel("Path tracing", rayGroupBox);
+	QHBoxLayout* raysPTLayout = new QHBoxLayout();
+	QLabel* raysPTLabel0 = new QLabel("Rays ", rayGroupBox);
+	QSlider* raysPTSlider = new QSlider(Qt::Horizontal, rayGroupBox);
+	raysPTSlider->setRange(1, 300);
+	raysPTSlider->setValue(10);
+	raysPTLabel = new QLabel("10", rayGroupBox);
+	connect(raysPTSlider, SIGNAL(valueChanged(int)), this, SLOT(setRaysPT(int)));
+	raysPTLayout->addWidget(raysPTLabel0);
+	raysPTLayout->addWidget(raysPTSlider);
+	raysPTLayout->addWidget(raysPTLabel);
+
+	QHBoxLayout* iterPTLayout = new QHBoxLayout();
+	QLabel* iterPTLabel0 = new QLabel("Iterations ", rayGroupBox);
+	QSlider* iterPTSlider = new QSlider(Qt::Horizontal, rayGroupBox);
+	iterPTSlider->setRange(0, 10);
+	iterPTSlider->setValue(1);
+	iterPTLabel = new QLabel("1", rayGroupBox);
+	connect(iterPTSlider, SIGNAL(valueChanged(int)), this, SLOT(setIterationsPT(int)));
+	iterPTLayout->addWidget(iterPTLabel0);
+	iterPTLayout->addWidget(iterPTSlider);
+	iterPTLayout->addWidget(iterPTLabel);
+
+	rayLayout->addWidget(ptLabel);
+	rayLayout->addLayout(raysPTLayout);
+	rayLayout->addLayout(iterPTLayout);
+
 
 	// other settings
 	QPushButton* rayButton = new QPushButton("Render", rayGroupBox);
