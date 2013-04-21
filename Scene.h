@@ -1,3 +1,4 @@
+
 // *********************************************************
 // Scene Class
 // Author : Tamy Boubekeur (boubek@gmail.com).
@@ -12,7 +13,7 @@
 #include <vector>
 
 #include "Object.h"
-#include "Light.h"
+#include "AreaLight.h"
 #include "BoundingBox.h"
 
 class Scene {
@@ -25,6 +26,9 @@ public:
     
     inline std::vector<Light> & getLights () { return lights; }
     inline const std::vector<Light> & getLights () const { return lights; }
+
+    inline std::vector<AreaLight> & getAreaLights () { return areaLights; }
+    inline const std::vector<AreaLight> & getAreaLights () const { return areaLights; }
     
     inline const BoundingBox & getBoundingBox () const { return bbox; }
     void updateBoundingBox ();
@@ -37,6 +41,7 @@ private:
     void buildDefaultScene ();
     std::vector<Object> objects;
     std::vector<Light> lights;
+    std::vector<AreaLight> areaLights;
     BoundingBox bbox;
 };
 

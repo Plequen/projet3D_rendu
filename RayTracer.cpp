@@ -1,3 +1,4 @@
+
 // *********************************************************
 // Ray Tracer Class
 // Author : Tamy Boubekeur (boubek@gmail.com).
@@ -57,6 +58,12 @@ QImage RayTracer::render(const Vec3Df& camPos,
 	for (unsigned int i = 0; i < screenWidth; i++) {
 		progressDialog.setValue ((100*i)/screenWidth);
 		for (unsigned int j = 0; j < screenHeight; j++) {
+
+			// variable parameters
+			bool softShadows=true;
+			bool hardShadows=false;
+			unsigned nbPointsDisc = 20; // nb of points on the area light source (discretization)
+
 			float tanX = tan (fieldOfView) * aspectRatio;
 			float tanY = tan (fieldOfView);
 			float stepPixelX = float (i) - screenWidth / 2.f;
@@ -101,9 +108,9 @@ QImage RayTracer::render(const Vec3Df& camPos,
 						const Vec3Df& intersectedPoint = intersectedVertex.getPos();
 						Vec3Df normal = intersectedVertex.getNormal();
 						normal.normalize();
-						vector<Light>& sceneLights = scene->getLights();
+						vector<AreaLight>& sceneLights = scene->getAreaLights();
 						// color the pixel following the leaf it belongs to in the kdtree
-					//	c = Vec3Df(intersectedLeafId % 3 == 0 ? 1.0f : 0.0f, intersectedLeafId % 3 == 1 ? 1.0f : 0.0f, intersectedLeafId % 3 == 2 ? 1.0f : 0.0f);
+						//	c = Vec3Df(intersectedLeafId % 3 == 0 ? 1.0f : 0.0f, intersectedLeafId % 3 == 1 ? 1.0f : 0.0f, intersectedLeafId % 3 == 2 ? 1.0f : 0.0f);
 						//
 						// Phong Shading
 						//
@@ -116,30 +123,64 @@ QImage RayTracer::render(const Vec3Df& camPos,
 							lightDirection.normalize();
 
 							// shadows
-							distShadow = INFINITE_DISTANCE;
-							bool shadowFound = false;
-							for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
-								const Object& ob = scene->getObjects()[n];
-								Ray shadowRay(intersectedPoint + o.getTrans() - ob.getTrans(), lightDirection);
-								if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) {
-									shadowFound = true;
-									break;
+
+							// visibility is between O and 1, 0 if not visible, 1 is completely visible
+							float visibility = (float)nbPointsDisc;
+							
+							if(softShadows)
+							{
+								// random set of points on the area light source
+								sceneLights[k].discretize(nbPointsDisc);
+								const vector<Vec3Df>& discretization = sceneLights[k].getDiscretization();
+
+								// cast one ray for each discret point of the area light source
+								for(unsigned p=0; p<nbPointsDisc; p++)
+								{
+									distShadow = INFINITE_DISTANCE;
+									Vec3Df lightPosDisc=discretization[p];
+									Vec3Df directionToLightDisc = lightPosDisc - (intersectedPoint+o.getTrans());
+									directionToLightDisc.normalize();
+
+									
+									for (unsigned int n = 0; n < scene->getObjects().size (); n++) 
+									{
+										const Object& ob = scene->getObjects()[n];
+										Ray shadowRay(intersectedPoint + o.getTrans() - ob.getTrans(), directionToLightDisc);
+										if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) 
+										{
+											visibility--;
+											break;
+										}
+									}
 								}
 							}
-							if (shadowFound)
-								continue;
+							else if(hardShadows)
+							{
+								distShadow = INFINITE_DISTANCE;
+								bool shadowFound = false;
+								for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
+									const Object& ob = scene->getObjects()[n];
+									Ray shadowRay(intersectedPoint + o.getTrans() - ob.getTrans(), lightDirection);
+									if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) {
+										visibility=0.0f;
+										break;
+									}
+								}
+							}
+							visibility/=(float)nbPointsDisc;
+
+							if (visibility<0.00001f)
+									continue;
 
 							float diff = Vec3Df::dotProduct(normal, lightDirection);
 							Vec3Df r = 2 * diff * normal - lightDirection;
 							if (diff <= 0.00001f)
 								diff = 0.00001f;
 							r.normalize();
-							Vec3Df v = - (intersectedPoint + o.getTrans());
-							v.normalize();
 							float spec = Vec3Df::dotProduct(r, -dir); 
 							if (spec <= 0.00001f)
 								spec = 0.00001f;
-							c += sceneLights[k].getIntensity() * (material.getDiffuse() * diff + material.getSpecular() * spec) * sceneLights[k].getColor() * material.getColor();
+							c += visibility*sceneLights[k].getIntensity() * (material.getDiffuse() * diff + material.getSpecular() * spec) * sceneLights[k].getColor() * material.getColor();
 						}
 					}
 				}

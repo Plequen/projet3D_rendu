@@ -1,3 +1,4 @@
+
 // *********************************************************
 // Scene Class
 // Author : Tamy Boubekeur (boubek@gmail.com).
@@ -71,4 +72,7 @@ void Scene::buildDefaultScene () {
 
     Light l (Vec3Df (3.0f, 3.0f, 3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f);
     lights.push_back (l);
+
+    AreaLight al (Vec3Df (3.0f, 3.0f, 3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f, 1.0f, Vec3Df(-1.0f,-1.0f,-1.0f));
+    areaLights.push_back (al);
 }
