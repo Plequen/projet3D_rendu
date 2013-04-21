@@ -7,6 +7,7 @@
 #include <QToolBar>
 #include <QCheckBox>
 #include <QGroupBox>
+#include <QRadioButton>
 #include <QComboBox>
 #include <QSlider>
 #include <QLCDNumber>
@@ -35,6 +36,8 @@ public slots :
     void exportGLImage ();
     void exportRayImage ();
     void about ();
+	void setAAMode(int m);
+	void setAAGrid(int grid);  
     
 private :
     void initControlWidget ();
@@ -44,6 +47,8 @@ private :
     QString currentDirectory;
 
     GLViewer * viewer;
+	QLabel* antialiasingLabel;		
+	QRadioButton* uniformAA;
 };
 
 #endif // WINDOW_H

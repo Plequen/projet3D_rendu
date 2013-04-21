@@ -19,8 +19,12 @@ public:
     static RayTracer * getInstance ();
     static void destroyInstance ();
 
+	typedef enum {None = 0, Uniform = 1, Poisson = 2} AntialiasingMode;
+
     inline const Vec3Df & getBackgroundColor () const { return backgroundColor;}
     inline void setBackgroundColor (const Vec3Df & c) { backgroundColor = c; }
+	void setAAMode(int m) { antialiasingMode = static_cast<AntialiasingMode>(m); }
+	void setAAGrid(unsigned int grid) { aaGrid = grid; }
     
     QImage render (const Vec3Df & camPos,
                    const Vec3Df & viewDirection,
@@ -32,11 +36,13 @@ public:
                    unsigned int screenHeight);
     
 protected:
-    inline RayTracer () {}
+    inline RayTracer() : antialiasingMode(None), aaGrid(1) {}
     inline virtual ~RayTracer () {}
     
 private:
     Vec3Df backgroundColor;
+	AntialiasingMode antialiasingMode;
+	unsigned int aaGrid;
 };
 
 

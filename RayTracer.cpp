@@ -11,7 +11,7 @@
 #include "KDTree.h"
 #include <QProgressDialog>
 
-#define	ANTIALIASING	1
+//#define	ANTIALIASING	1
 #define INFINITE_DISTANCE	1000000.0f		
 
 static RayTracer * instance = NULL;
@@ -54,6 +54,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 	const Vec3Df rangeBb = maxBb - minBb;
 	QProgressDialog progressDialog ("Raytracing...", "Cancel", 0, 100);
 	progressDialog.show ();
+	unsigned int raysPerPixel = antialiasingMode == Uniform ? aaGrid : 1;
 	for (unsigned int i = 0; i < screenWidth; i++) {
 		progressDialog.setValue ((100*i)/screenWidth);
 		for (unsigned int j = 0; j < screenHeight; j++) {
@@ -62,10 +63,10 @@ QImage RayTracer::render(const Vec3Df& camPos,
 			float stepPixelX = float (i) - screenWidth / 2.f;
 			float stepPixelY = float (j) - screenHeight / 2.f;
 			Vec3Df c = Vec3Df(0.0f, 0.0f, 0.0f);
-			for (unsigned int l = 0 ; l < ANTIALIASING ; l++) {
-				for (unsigned int m = 0 ; m < ANTIALIASING ; m++) {
-					float stepAAX = (0.5f + float (l)) / ANTIALIASING - 0.5f;  
-					float stepAAY = (0.5f + float (m)) / ANTIALIASING - 0.5f;  
+			for (unsigned int l = 0 ; l < raysPerPixel ; l++) {
+				for (unsigned int m = 0 ; m < raysPerPixel ; m++) {
+					float stepAAX = (0.5f + float (l)) / raysPerPixel - 0.5f;  
+					float stepAAY = (0.5f + float (m)) / raysPerPixel - 0.5f;  
 					Vec3Df stepX = (stepPixelX + stepAAX) / screenWidth * tanX * rightVector;
 					Vec3Df stepY = (stepPixelY + stepAAY) / screenHeight * tanY * upVector;
 					Vec3Df step = stepX + stepY;
@@ -144,7 +145,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 					}
 				}
 			}
-			c *= 255.0f / (ANTIALIASING * ANTIALIASING);
+			c *= 255.0f / (raysPerPixel * raysPerPixel);
 			image.setPixel(i, j, qRgb(clamp(c[0], 0, 255), clamp(c[1], 0, 255), clamp(c[2], 0, 255)));
 		}
 	}

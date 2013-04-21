@@ -89,6 +89,17 @@ void Window::renderRayImage () {
     viewer->setDisplayMode (GLViewer::RayDisplayMode);
 }
 
+void Window::setAAMode(int m) {
+	RayTracer::getInstance()->setAAMode(m);
+}
+
+void Window::setAAGrid(int grid) {
+	RayTracer::getInstance()->setAAMode(static_cast<int>(RayTracer::Uniform));
+	RayTracer::getInstance()->setAAGrid(grid);
+	antialiasingLabel->setText(QString::number(grid));	
+	uniformAA->setChecked(true);	
+}
+
 void Window::setBGColor () {
     QColor c = QColorDialog::getColor (QColor (133, 152, 181), this);
     if (c.isValid () == true) {
@@ -151,6 +162,32 @@ void Window::initControlWidget () {
     
     QGroupBox * rayGroupBox = new QGroupBox ("Ray Tracing", controlWidget);
     QVBoxLayout * rayLayout = new QVBoxLayout (rayGroupBox);
+	
+	// Antialiasing Settings
+	QLabel* aaLabel = new QLabel("Antialiasing", rayGroupBox);
+	QButtonGroup* aaButtonGroup = new QButtonGroup(rayGroupBox);
+	QRadioButton* noAA = new QRadioButton("None", rayGroupBox);
+	uniformAA = new QRadioButton("Uniform", rayGroupBox);
+	QRadioButton* poissonAA = new QRadioButton("Poisson", rayGroupBox);
+	aaButtonGroup->addButton(noAA, static_cast<int>(RayTracer::None)); 
+	aaButtonGroup->addButton(uniformAA, static_cast<int>(RayTracer::Uniform)); 
+	aaButtonGroup->addButton(poissonAA, static_cast<int>(RayTracer::Poisson)); 
+	noAA->setChecked(true);
+	connect(aaButtonGroup, SIGNAL(buttonClicked(int)), this, SLOT(setAAMode(int)));
+	QSlider* antialiasingSlider = new QSlider(Qt::Horizontal, rayGroupBox);
+	antialiasingSlider->setRange(1, 10);
+	antialiasingLabel = new QLabel("1", rayGroupBox);
+	connect(antialiasingSlider, SIGNAL(valueChanged(int)), this, SLOT(setAAGrid(int)));
+
+	rayLayout->addWidget(aaLabel);
+	rayLayout->addWidget(noAA);
+	rayLayout->addWidget(uniformAA);
+	rayLayout->addWidget(antialiasingSlider);
+	rayLayout->addWidget(antialiasingLabel);
+	rayLayout->addWidget(poissonAA);
+	
+
+    connect (wireframeCheckBox, SIGNAL (toggled (bool)), viewer, SLOT (setWireframe (bool)));
     QPushButton * rayButton = new QPushButton ("Render", rayGroupBox);
     rayLayout->addWidget (rayButton);
     connect (rayButton, SIGNAL (clicked ()), this, SLOT (renderRayImage ()));
