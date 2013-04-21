@@ -9,8 +9,12 @@
 #include "Ray.h"
 #include "Scene.h"
 #include "KDTree.h"
+#include "BRDF.h"
 #include <QProgressDialog>
 
+using namespace std;
+
+void computeShadowRays(const vector<Object>& objects, const vector<Light>& lights, vector<bool>& shadows);
 static RayTracer * instance = NULL;
 
 RayTracer * RayTracer::getInstance () 
@@ -71,6 +75,7 @@ QImage RayTracer::render (const Vec3Df & camPos,
 			for (unsigned int k = 0; k < scene->getObjects().size (); k++) 
 			{
 				const Object & o = scene->getObjects()[k];
+				const Material& mat = o.getMaterial();
 				Ray ray (camPos-o.getTrans (), dir);
 				bool hasIntersection = ray.intersectObject (o, intersectionPoint, normal);
 				if (hasIntersection) 
@@ -81,32 +86,13 @@ QImage RayTracer::render (const Vec3Df & camPos,
 						c = Vec3Df(0.0f,0.0f,0.0f);
 						Material material = o.getMaterial();
 						normal.normalize();
-						std::vector<Light> sceneLights = scene->getLights();
-						for(unsigned l=0; l < sceneLights.size(); l++)
+						vector<Light> sceneLights = scene->getLights();
+
+						//*** Phong shading with shawdows ***/
+						c += phong(intersectionPoint, normal, o, scene, -dir ,camPos);
+						if(mat.getShininess()>0.0001f)//Ajout de l'effet mirroir
 						{
-							/***   Phong Shading   ****/
-
-							//On place la lumiere dans le repere de la camera
-							Vec3Df lightPosCamSpace;
-							lightPosCamSpace[0]=Vec3Df::dotProduct(rightVector,sceneLights[l].getPos());
-							lightPosCamSpace[1]=Vec3Df::dotProduct(upVector,sceneLights[l].getPos());
-							lightPosCamSpace[2]=Vec3Df::dotProduct(-direction,sceneLights[l].getPos());
-							lightPosCamSpace+=camPos;
-
-							Vec3Df lightDirection = lightPosCamSpace - (intersectionPoint + o.getTrans());
-							lightDirection.normalize();
-							float diff = Vec3Df::dotProduct(normal, lightDirection);
-							Vec3Df r = 2*diff*normal-lightDirection;
-							if(diff<=0.0f)
-								diff=0.0f;
-							r.normalize();
-							Vec3Df v = -(intersectionPoint+o.getTrans());
-							v.normalize();
-							float spec = Vec3Df::dotProduct(r, -dir); 
-							if(spec <= 0.0f)
-								spec=0.0f;
-							c += sceneLights[l].getIntensity()*(material.getDiffuse()*diff + material.getSpecular()*spec)*sceneLights[l].getColor()*material.getColor();
-
+							c += ray.mirrorReflection(o, intersectionPoint,normal, scene, -dir, camPos, 0);
 						}
 						c=255.0f*c;
 						smallestIntersectionDistance = intersectionDistance;
@@ -119,3 +105,7 @@ QImage RayTracer::render (const Vec3Df & camPos,
 	progressDialog.setValue (100);
 	return image;
 }
+
+
+
+

@@ -204,6 +204,7 @@ bool Ray::intersectObject(const Object & o, Vec3Df & intersectionPoint, Vec3Df &
 
 	return intersection;
 }
+
 /*
    bool Ray::intersectObject(const Object & o, Vec3Df & intersectionPoint, Vec3Df & normal) const
    {
@@ -313,3 +314,146 @@ bool Ray::intersectTriangle(const Vec3Df& va, const Vec3Df & vb, const Vec3Df & 
 	return true; 
 
 }
+
+/*
+   float Ray::computeShadowRays(const Vec3Df& point, const Vec3Df& normal, const vector<Object> objects, const vector<Light>& lights)
+   {
+   bool intersectionExist = false;
+   int nombreIntersections = 0;
+   float intensity = 0.0f;
+   for(unsigned int j = 0 ; j<lights.size() ; j++)
+   {
+   Vec3Df lightDirection = lights[j].getPos() - point;
+   this->setDirection(lightDirection);
+   if(Vec3Df::dotProduct(lightDirection, normal)>0)//Dans le cas contraire il y a forcement une ombre pour cette lumiere
+   {
+   Vec3Df intersectionPoint;
+   Vec3Df normalIntersectionPoint;
+   for(unsigned int k = 0 ; k< objects.size() ; k++)
+   {
+   bool hasIntersection = this->intersectObject(objects[k], intersectionPoint, normalIntersectionPoint);
+   Vec3Df distance = intersectionPoint-point;
+   if(hasIntersection && distance.getLength()>epsilon)//S'il y a intersection, il y a une ombre pour cette lumiere
+   {
+   intersectionExist = true;
+   nombreIntersections++;
+   break;
+   }
+   }
+   }
+   else
+   {
+   intersectionExist = true;
+   nombreIntersections++;
+   }
+
+   if(!intersectionExist)//S'il n'y a pas d'intersection, on prend en compte la contribution de cette lumiere;
+   {
+   intensity += lights[j].getIntensity();
+   }
+   }
+
+   return intensity;	
+   }
+ */
+
+float Ray::computeShadowRays(const Vec3Df& point, const Vec3Df& normal, const vector<Object> objects, const Light& lights)
+{
+	bool intersectionExist = false;
+	float intensity = 0.0f;
+
+	Vec3Df lightDirection = lights.getPos() - point;
+	this->setDirection(lightDirection);
+	if(Vec3Df::dotProduct(lightDirection, normal)>0)//Dans le cas contraire il y a forcement une ombre pour cette lumiere
+	{
+		Vec3Df intersectionPoint;
+		Vec3Df normalIntersectionPoint;
+		for(unsigned int k = 0 ; k< objects.size() ; k++)
+		{
+			bool hasIntersection = this->intersectObject(objects[k], intersectionPoint, normalIntersectionPoint);
+			Vec3Df distance = intersectionPoint-point;
+			if(hasIntersection && distance.getLength()>epsilon)//S'il y a intersection, il y a une ombre pour cette lumiere
+			{
+				intersectionExist = true;
+				break;
+			}
+		}
+	}
+	else
+	{
+		intersectionExist = true;
+	}
+
+	if(!intersectionExist)//S'il n'y a pas d'intersection, on prend en compte la contribution de cette lumiere;
+	{
+		intensity += lights.getIntensity();
+	}
+
+
+	return intensity;	
+}
+
+//Dans le cas d'une intersection d'object avec ce rayon, cette fonction renvoie la couleur du pixel correspondant
+Vec3Df Ray::mirrorReflection(const Object& object, const Vec3Df& intersectionPoint, const Vec3Df& normal, const Scene* scene, const Vec3Df& directionEmission, const Vec3Df& camPos, int nombreRecursion)
+{
+	const Material& material = object.getMaterial();
+	const vector<Object> sceneObjects = scene->getObjects();
+	float intersectionDistance = 0;
+	float smallestIntersectionDistance = 1000000.0f;
+	int objectNumber = 0;
+	bool intersectionExist = false;
+	Vec3Df color(0.0f,0.0f,0.0f);
+	Vec3Df currentIntermediateIntersectionPoint(0.0f,0.0f,0.0f);
+	Vec3Df currentIntermediateNormal(0.0f,0.0f,0.0f);
+	Vec3Df intermediateIntersectionPoint(0.0f,0.0f,0.0f);
+	Vec3Df intermediateNormal(0.0f,0.0f,0.0f);
+	Vec3Df lightDirection = camPos - intersectionPoint;
+
+	if(material.getShininess()>epsilon)
+	{
+		if(nombreRecursion < NOMBRE_MAX_RECURSION)
+		{
+			float diff = Vec3Df::dotProduct(normal, lightDirection);
+			Vec3Df r = 2*diff*normal-lightDirection;//direction de reflexion
+			for(unsigned int i = 0 ; i<sceneObjects.size() ; i++)//Determine l'objet le plus proche qui va intersecter le prochain rayon
+			{
+				Ray rayIntersectionTest(intersectionPoint-sceneObjects[i].getTrans(), r);
+				bool hasIntersection = rayIntersectionTest.intersectObject(sceneObjects[i], currentIntermediateIntersectionPoint, currentIntermediateNormal);
+				if(hasIntersection)
+				{
+					intersectionExist = true;
+					Vec3Df distance = intersectionPoint - currentIntermediateIntersectionPoint;
+					intersectionDistance = distance.getLength();
+					if(intersectionDistance < smallestIntersectionDistance)
+					{
+						intermediateIntersectionPoint = currentIntermediateIntersectionPoint;
+						intermediateNormal = currentIntermediateNormal;
+						objectNumber = i;
+						smallestIntersectionDistance = intersectionDistance;
+					}	
+				}
+			}
+
+			if(intersectionExist)
+			{
+				Ray reflectionRay(intersectionPoint-sceneObjects[objectNumber].getTrans(), r);
+				
+				float diff = Vec3Df::dotProduct(intermediateNormal, lightDirection);
+			//	Vec3Df r2 = 2*diff*intermediateNormal-lightDirection;//direction de reflexion
+					color += material.getShininess()*reflectionRay.mirrorReflection(sceneObjects[objectNumber], intermediateIntersectionPoint, intermediateNormal, scene, -r, intersectionPoint, nombreRecursion+1);
+			}
+		}
+		else
+		{
+		
+			color += phong(intersectionPoint, normal, object, scene, directionEmission, camPos);
+		}
+	}
+	else
+	{
+		color += phong(intersectionPoint, normal, object, scene, directionEmission, camPos); 
+	}
+
+	return color;
+}
+
