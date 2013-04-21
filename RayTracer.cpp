@@ -11,7 +11,10 @@
 #include "KDTree.h"
 #include <QProgressDialog>
 
-//#define	ANTIALIASING	1
+/*#define	raysAO	25
+#define percentageAO	0.05f
+#define coneAO	180.0f
+#define intensityAO	0.1f*/
 #define INFINITE_DISTANCE	1000000.0f		
 
 static RayTracer * instance = NULL;
@@ -93,31 +96,58 @@ QImage RayTracer::render(const Vec3Df& camPos,
 						}
 					}
 					// compute the color to give to the current pixel
-					if (shadowsMode == AmbientOcclusion) {
-						
-					}
-					else {
-						float distShadow;
-						Vertex intersectionShadow;
-						unsigned int leafIdShadow;
-						if (hasIntersection) {
-							const Object& o = scene->getObjects()[intersectedObject];
-							const Material& material = o.getMaterial();
-							const Vec3Df& intersectedPoint = intersectedVertex.getPos();
-							Vec3Df normal = intersectedVertex.getNormal();
-							normal.normalize();
+					if (hasIntersection) {
+						const Object& o = scene->getObjects()[intersectedObject];
+						const Material& material = o.getMaterial();
+						// intersected point in the object reference : intersectedPoint
+						// intersected point in the world reference : intersectedPoint + o.getTrans()
+						// let's put the intersected point in the world reference
+						const Vec3Df& intersectedPoint = intersectedVertex.getPos() + o.getTrans();
+						Vec3Df normal = intersectedVertex.getNormal();
+						normal.normalize();
+						// color the pixel following the leaf it belongs to in the kdtree
+					//	c = Vec3Df(intersectedLeafId % 3 == 0 ? 1.0f : 0.0f, intersectedLeafId % 3 == 1 ? 1.0f : 0.0f, intersectedLeafId % 3 == 2 ? 1.0f : 0.0f);
+						if (ambientOcclusionMode != AODisabled) {
+							float sphereRadius = percentageAO * scene->getBoundingBox().getSize();
+							Vertex intersectionOcclusion;
+							unsigned int leafIdOcclusion;
+							unsigned int occlusions = 0;
+							Vec3Df base1(0, -normal[2], normal[1]);
+							Vec3Df base2 = Vec3Df::crossProduct(normal, base1);
+							Vec3Df rayDirection;
+							for (unsigned int k = 0 ; k < raysAO ; k++) {
+								// computes a random direction for the ray
+								float rdm = (float) rand() / ((float) RAND_MAX);
+								float rdm2 = (float) rand() / ((float) RAND_MAX);
+								Vec3Df tmp (1.f, M_PI * rdm * (coneAO / 180.f) / 2.f, rdm2 * 2 * M_PI);
+								Vec3Df aux = Vec3Df::polarToCartesian(tmp);
+								// places the direction in the hemisphere supported by the normal of the point
+								rayDirection[0] = base1[0] * aux[0] + base2[0] * aux[1] + normal[0] * aux[2];
+								rayDirection[1] = base1[1] * aux[0] + base2[1] * aux[1] + normal[1] * aux[2];
+								rayDirection[2] = base1[2] * aux[0] + base2[2] * aux[1] + normal[2] * aux[2];
+								float distOcclusion = sphereRadius; 
+								for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
+									const Object& ob = scene->getObjects()[n];
+									Ray occlusionRay(intersectedPoint - ob.getTrans(), rayDirection);
+									if (ob.intersectsRay(occlusionRay, intersectionOcclusion, distOcclusion, leafIdOcclusion)) {
+										occlusions++;
+										break;
+									}
+								}
+							}
+							float occlusionRate = 1.f - ((float) occlusions) / raysAO;
+							c += intensityAO * Vec3Df(occlusionRate, occlusionRate, occlusionRate);
+						}
+						if (ambientOcclusionMode != AOOnly) {
+							float distShadow;
+							Vertex intersectionShadow;
+							unsigned int leafIdShadow;
 							vector<Light>& sceneLights = scene->getLights();
-							// color the pixel following the leaf it belongs to in the kdtree
-						//	c = Vec3Df(intersectedLeafId % 3 == 0 ? 1.0f : 0.0f, intersectedLeafId % 3 == 1 ? 1.0f : 0.0f, intersectedLeafId % 3 == 2 ? 1.0f : 0.0f);
 							//
 							// Phong Shading
 							//
 							for (unsigned int k = 0 ; k < sceneLights.size() ; k++) {
-								// intersected point in the world reference : intersectedPoint + o.getTrans()
-								// light position in the world reference : sceneLights[k].getPos()
-								// intersected point in the object reference : intersectedPoint
-								// light position in the object reference : sceneLights[k].getPos() - o.getTrans()
-								Vec3Df lightDirection = sceneLights[k].getPos() - (intersectedPoint + o.getTrans());
+								Vec3Df lightDirection = sceneLights[k].getPos() - intersectedPoint;
 								lightDirection.normalize();
 
 								// shadows
@@ -126,7 +156,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 									bool shadowFound = false;
 									for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
 										const Object& ob = scene->getObjects()[n];
-										Ray shadowRay(intersectedPoint + o.getTrans() - ob.getTrans(), lightDirection);
+										Ray shadowRay(intersectedPoint - ob.getTrans(), lightDirection);
 										if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) {
 											shadowFound = true;
 											break;
@@ -143,7 +173,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 								if (diff <= 0.00001f)
 									diff = 0.00001f;
 								r.normalize();
-								Vec3Df v = - (intersectedPoint + o.getTrans());
+								Vec3Df v = - intersectedPoint;
 								v.normalize();
 								float spec = Vec3Df::dotProduct(r, -dir); 
 								if (spec <= 0.00001f)
