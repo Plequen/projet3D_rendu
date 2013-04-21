@@ -38,6 +38,7 @@ public slots :
     void about ();
 	void setAAMode(int m);
 	void setAAGrid(int grid);  
+	void setShadowsMode(int m);  
     
 private :
     void initControlWidget ();

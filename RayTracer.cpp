@@ -93,54 +93,63 @@ QImage RayTracer::render(const Vec3Df& camPos,
 						}
 					}
 					// compute the color to give to the current pixel
-					float distShadow;
-					Vertex intersectionShadow;
-					unsigned int leafIdShadow;
-					if (hasIntersection) {
-						const Object& o = scene->getObjects()[intersectedObject];
-						const Material& material = o.getMaterial();
-						const Vec3Df& intersectedPoint = intersectedVertex.getPos();
-						Vec3Df normal = intersectedVertex.getNormal();
-						normal.normalize();
-						vector<Light>& sceneLights = scene->getLights();
-						// color the pixel following the leaf it belongs to in the kdtree
-					//	c = Vec3Df(intersectedLeafId % 3 == 0 ? 1.0f : 0.0f, intersectedLeafId % 3 == 1 ? 1.0f : 0.0f, intersectedLeafId % 3 == 2 ? 1.0f : 0.0f);
-						//
-						// Phong Shading
-						//
-						for (unsigned int k = 0 ; k < sceneLights.size() ; k++) {
-							// intersected point in the world reference : intersectedPoint + o.getTrans()
-							// light position in the world reference : sceneLights[k].getPos()
-							// intersected point in the object reference : intersectedPoint
-							// light position in the object reference : sceneLights[k].getPos() - o.getTrans()
-							Vec3Df lightDirection = sceneLights[k].getPos() - (intersectedPoint + o.getTrans());
-							lightDirection.normalize();
+					if (shadowsMode == AmbientOcclusion) {
+						
+					}
+					else {
+						float distShadow;
+						Vertex intersectionShadow;
+						unsigned int leafIdShadow;
+						if (hasIntersection) {
+							const Object& o = scene->getObjects()[intersectedObject];
+							const Material& material = o.getMaterial();
+							const Vec3Df& intersectedPoint = intersectedVertex.getPos();
+							Vec3Df normal = intersectedVertex.getNormal();
+							normal.normalize();
+							vector<Light>& sceneLights = scene->getLights();
+							// color the pixel following the leaf it belongs to in the kdtree
+						//	c = Vec3Df(intersectedLeafId % 3 == 0 ? 1.0f : 0.0f, intersectedLeafId % 3 == 1 ? 1.0f : 0.0f, intersectedLeafId % 3 == 2 ? 1.0f : 0.0f);
+							//
+							// Phong Shading
+							//
+							for (unsigned int k = 0 ; k < sceneLights.size() ; k++) {
+								// intersected point in the world reference : intersectedPoint + o.getTrans()
+								// light position in the world reference : sceneLights[k].getPos()
+								// intersected point in the object reference : intersectedPoint
+								// light position in the object reference : sceneLights[k].getPos() - o.getTrans()
+								Vec3Df lightDirection = sceneLights[k].getPos() - (intersectedPoint + o.getTrans());
+								lightDirection.normalize();
 
-							// shadows
-							distShadow = INFINITE_DISTANCE;
-							bool shadowFound = false;
-							for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
-								const Object& ob = scene->getObjects()[n];
-								Ray shadowRay(intersectedPoint + o.getTrans() - ob.getTrans(), lightDirection);
-								if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) {
-									shadowFound = true;
-									break;
+								// shadows
+								if (shadowsMode == Hard) {
+									distShadow = INFINITE_DISTANCE;
+									bool shadowFound = false;
+									for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
+										const Object& ob = scene->getObjects()[n];
+										Ray shadowRay(intersectedPoint + o.getTrans() - ob.getTrans(), lightDirection);
+										if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) {
+											shadowFound = true;
+											break;
+										}
+									}
+									if (shadowFound)
+										continue;
 								}
-							}
-							if (shadowFound)
-								continue;
+								else if (shadowsMode == Soft) {
+								}
 
-							float diff = Vec3Df::dotProduct(normal, lightDirection);
-							Vec3Df r = 2 * diff * normal - lightDirection;
-							if (diff <= 0.00001f)
-								diff = 0.00001f;
-							r.normalize();
-							Vec3Df v = - (intersectedPoint + o.getTrans());
-							v.normalize();
-							float spec = Vec3Df::dotProduct(r, -dir); 
-							if (spec <= 0.00001f)
-								spec = 0.00001f;
-							c += sceneLights[k].getIntensity() * (material.getDiffuse() * diff + material.getSpecular() * spec) * sceneLights[k].getColor() * material.getColor();
+								float diff = Vec3Df::dotProduct(normal, lightDirection);
+								Vec3Df r = 2 * diff * normal - lightDirection;
+								if (diff <= 0.00001f)
+									diff = 0.00001f;
+								r.normalize();
+								Vec3Df v = - (intersectedPoint + o.getTrans());
+								v.normalize();
+								float spec = Vec3Df::dotProduct(r, -dir); 
+								if (spec <= 0.00001f)
+									spec = 0.00001f;
+								c += sceneLights[k].getIntensity() * (material.getDiffuse() * diff + material.getSpecular() * spec) * sceneLights[k].getColor() * material.getColor();
+							}
 						}
 					}
 				}

@@ -100,6 +100,10 @@ void Window::setAAGrid(int grid) {
 	uniformAA->setChecked(true);	
 }
 
+void Window::setShadowsMode(int m) {
+	RayTracer::getInstance()->setShadowsMode(m);
+}
+
 void Window::setBGColor () {
     QColor c = QColorDialog::getColor (QColor (133, 152, 181), this);
     if (c.isValid () == true) {
@@ -185,6 +189,26 @@ void Window::initControlWidget () {
 	rayLayout->addWidget(antialiasingSlider);
 	rayLayout->addWidget(antialiasingLabel);
 	rayLayout->addWidget(poissonAA);
+
+	// Shadows settings
+	QLabel* shadowsLabel = new QLabel("Shadows", rayGroupBox);
+	QButtonGroup* shadowsButtonGroup = new QButtonGroup(rayGroupBox);
+	QRadioButton* noShadowsButton = new QRadioButton("None", rayGroupBox);
+	QRadioButton* hardShadowsButton = new QRadioButton("Hard", rayGroupBox);
+	QRadioButton* softShadowsButton = new QRadioButton("Soft", rayGroupBox);
+	QRadioButton* aoShadowsButton = new QRadioButton("Ambient Occlusion", rayGroupBox);
+	shadowsButtonGroup->addButton(noShadowsButton, static_cast<int>(RayTracer::NoShadows)); 
+	shadowsButtonGroup->addButton(hardShadowsButton, static_cast<int>(RayTracer::Hard)); 
+	shadowsButtonGroup->addButton(softShadowsButton, static_cast<int>(RayTracer::Soft)); 
+	shadowsButtonGroup->addButton(aoShadowsButton, static_cast<int>(RayTracer::AmbientOcclusion)); 
+	noShadowsButton->setChecked(true);
+	connect(shadowsButtonGroup, SIGNAL(buttonClicked(int)), this, SLOT(setShadowsMode(int)));
+
+	rayLayout->addWidget(shadowsLabel);
+	rayLayout->addWidget(noShadowsButton);
+	rayLayout->addWidget(hardShadowsButton);
+	rayLayout->addWidget(softShadowsButton);
+	rayLayout->addWidget(aoShadowsButton);
 	
 
     connect (wireframeCheckBox, SIGNAL (toggled (bool)), viewer, SLOT (setWireframe (bool)));

@@ -20,11 +20,13 @@ public:
     static void destroyInstance ();
 
 	typedef enum {None = 0, Uniform = 1, Poisson = 2} AntialiasingMode;
+	typedef enum {NoShadows = 0, Hard = 1, Soft = 2, AmbientOcclusion = 3} ShadowsMode;
 
     inline const Vec3Df & getBackgroundColor () const { return backgroundColor;}
     inline void setBackgroundColor (const Vec3Df & c) { backgroundColor = c; }
 	void setAAMode(int m) { antialiasingMode = static_cast<AntialiasingMode>(m); }
 	void setAAGrid(unsigned int grid) { aaGrid = grid; }
+	void setShadowsMode(int m) { shadowsMode = static_cast<ShadowsMode>(m); }
     
     QImage render (const Vec3Df & camPos,
                    const Vec3Df & viewDirection,
@@ -36,12 +38,13 @@ public:
                    unsigned int screenHeight);
     
 protected:
-    inline RayTracer() : antialiasingMode(None), aaGrid(1) {}
+    inline RayTracer() : antialiasingMode(None), shadowsMode(NoShadows), aaGrid(1) {}
     inline virtual ~RayTracer () {}
     
 private:
     Vec3Df backgroundColor;
 	AntialiasingMode antialiasingMode;
+	ShadowsMode shadowsMode;
 	unsigned int aaGrid;
 };
 
