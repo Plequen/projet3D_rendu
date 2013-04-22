@@ -17,18 +17,19 @@
 
 class Material {
 public:
-    inline Material () : diffuse (0.8f), specular (0.2f), color (0.5f, 0.5f, 0.5f), glossiness(0.0f), reflexionCoef(0.0f)  {}
-    inline Material (float diffuse, float specular, const Vec3Df & color, float glossiness, float reflexionCoef)
-        : diffuse (diffuse), specular (specular), color (color), glossiness(glossiness), reflexionCoef(reflexionCoef) {}
+    inline Material () : diffuse (0.8f), specular (0.2f), color (0.5f, 0.5f, 0.5f), glossiness(0.0f), reflectivity(0.0f), mirrorColorBlendingFactor(0.0f)  {}
+    inline Material (float diffuse, float specular, const Vec3Df & color, float glossiness, float reflectivity, float mirrorColorBlendingFactor)
+        : diffuse (diffuse), specular (specular), color (color), glossiness(glossiness), reflectivity(reflectivity), mirrorColorBlendingFactor(mirrorColorBlendingFactor) {}
     inline Material (float diffuse, float specular, const Vec3Df & color)
-        : diffuse (diffuse), specular (specular), color (color), glossiness(0.0f), reflexionCoef(0.0f) {}
+        : diffuse (diffuse), specular (specular), color (color), glossiness(0.0f), reflectivity(0.0f), mirrorColorBlendingFactor(0.0f) {}
     virtual ~Material () {}
 
     inline float getDiffuse () const { return diffuse; }
     inline float getSpecular () const { return specular; }
     inline Vec3Df getColor () const { return color; }
     inline float getGlossiness () const { return glossiness; }
-    inline float getReflexionCoef () const { return reflexionCoef; }
+    inline float getReflectivity () const { return reflectivity; }
+    inline float getMirrorColorBlendingFactor () const { return mirrorColorBlendingFactor; }
 
     inline void setDiffuse (float d) { diffuse = d; }
     inline void setSpecular (float s) { specular = s; }
@@ -39,7 +40,8 @@ private:
     float specular;
     Vec3Df color;
     float glossiness;
-    float reflexionCoef;
+    float reflectivity;
+    float mirrorColorBlendingFactor;
 };
 
 

@@ -86,7 +86,7 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 		if (mirrorsMode == MEnabled) 
 		{
 			unsigned nbReflexion=0;
-			while(  scene->getObjects()[intersectedObject].getMaterial().getReflexionCoef()>0.0f && nbReflexion < nbMaxReflexion)
+			while(  scene->getObjects()[intersectedObject].getMaterial().getReflectivity()>0.0f && nbReflexion < nbMaxReflexion)
 			{
 				const Object& auxO = scene->getObjects()[intersectedObject];
 				float distReflexion=INFINITE_DISTANCE;
@@ -170,11 +170,17 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 		else
 		{
 			finalColor=colorsIntersected[colorsIntersected.size()-1];
-			for(unsigned i=0; i<listVertexIntersected.size(); i++)
+			for(unsigned i=0; i<colorsIntersected.size(); i++)
 			{
 				finalColor*=listVisibilitiesIntersected[i]*listOcclusionRatesIntersected[i];
-				if(scene->getObjects()[listObjectsIntersected[i]].getMaterial().getReflexionCoef()>0.001f && mirrorsMode == MEnabled && i>0)
-					finalColor*=scene->getObjects()[listObjectsIntersected[i]].getMaterial().getReflexionCoef();
+				const Material& mat = scene->getObjects()[listObjectsIntersected[i]].getMaterial();
+				if(mat.getReflectivity()>0.001f && mirrorsMode == MEnabled)
+				{
+					finalColor=listVisibilitiesIntersected[i]*listOcclusionRatesIntersected[i]*finalColor;
+					finalColor=mat.getReflectivity()*(mat.getMirrorColorBlendingFactor()*mat.getColor()+(1.0f-mat.getMirrorColorBlendingFactor())*finalColor);
+				}
+				//if(scene->getObjects()[listObjectsIntersected[i]].getMaterial().getReflectivity()>0.001f && mirrorsMode == MEnabled)
+				//	finalColor*=scene->getObjects()[listObjectsIntersected[i]].getMaterial().getReflectivity();
 			}
 
 		}
