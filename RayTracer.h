@@ -52,7 +52,7 @@ public:
 		unsigned int screenHeight);
     
 protected:
-	inline RayTracer() : antialiasingMode(None), shadowsMode(NoShadows), ambientOcclusionMode(AODisabled), mirrorsMode(MDisabled), aaGrid(1), raysAO(10), percentageAO(0.05f), coneAO(180.f), intensityAO(0.1f), nbPointsDisc(50), raysPT(10), iterationsPT(1) {}
+	inline RayTracer() : antialiasingMode(None), shadowsMode(NoShadows), ambientOcclusionMode(AODisabled), mirrorsMode(MDisabled), aaGrid(1), raysAO(10), percentageAO(0.05f), coneAO(180.f), intensityAO(1.f), nbPointsDisc(50), raysPT(10), iterationsPT(1) {}
 	inline virtual ~RayTracer () {}
     
 private:
