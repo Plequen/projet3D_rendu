@@ -86,8 +86,49 @@ void Window::renderRayImage () {
     unsigned int screenHeight = cam->screenHeight ();
     QTime timer;
     timer.start ();
-    viewer->setRayImage(rayTracer->render (camPos, viewDirection, upVector, rightVector,
-                        fieldOfView, aspectRatio, screenWidth, screenHeight));
+	
+	int imagesNumber = 5;
+	
+	QImage image[imagesNumber];
+
+	for (unsigned int t = 0 ; t < imagesNumber ; t++) {
+		Scene* scene = Scene::getInstance();
+		// animate objects
+		for (unsigned int i = 0 ; i < scene->getObjects().size() ; i++) {
+			scene->getObjects()[i].animate(t);
+			scene->getObjects()[i].buildKDTree();
+		}
+
+		image[t] = rayTracer->render(camPos, viewDirection, upVector, rightVector, fieldOfView, aspectRatio, screenWidth, screenHeight);
+	}
+
+	QImage computedImage = image[0];
+	QRgb* rgb;
+	QRgb* rgb2;
+	for (int y = 0; y < image[0].height(); y++) {
+		rgb2 = (QRgb*)computedImage.scanLine(y); // Il faut que l'image soit en ARGB32 (je pense, voir la doc)
+		for (int x = 0; x < image[0].width(); x++) {
+			int valueR = 0;
+			int valueG = 0;
+			int valueB = 0;
+			int valueA = 0;
+			for (unsigned int t = 1 ; t < imagesNumber ; t++) {
+				rgb = (QRgb*)image[t].scanLine(y); // Il faut que l'image soit en ARGB32 (je pense, voir la doc)
+				valueR += qRed(rgb[x]); 
+				valueG += qGreen(rgb[x]); 
+				valueB += qBlue(rgb[x]); 
+				valueA += qAlpha(rgb[x]); 
+			}
+			valueR /= imagesNumber;
+			valueG /= imagesNumber;
+			valueB /= imagesNumber;
+			valueA /= imagesNumber;
+			rgb2[x] = qRgba(valueR, valueG, valueB, valueA);	
+		}
+	}
+
+	viewer->setRayImage(computedImage);
+
     statusBar()->showMessage(QString ("Raytracing performed in ") +
                              QString::number (timer.elapsed ()) +
                              QString ("ms at ") +

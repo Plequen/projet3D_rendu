@@ -43,6 +43,14 @@ void Scene::updateBoundingBox () {
     }
 }
 
+Vec3Df animation1(Vec3Df& initial, unsigned int t) {
+	return initial + t * Vec3Df(0.f, 0.02f, 0.f);
+}
+
+Vec3Df animation2(Vec3Df& initial, unsigned int t) {
+	return initial + t * Vec3Df(-0.02f, 0.f, 0.f);
+}
+
 // Changer ce code pour creer des scenes originales
 void Scene::buildDefaultScene () {
     Mesh groundMesh;
@@ -58,6 +66,7 @@ void Scene::buildDefaultScene () {
     Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f));
     Object ram (ramMesh, ramMat);
     ram.setTrans (Vec3Df (1.f, 0.5f, 0.f));
+	ram.setAnimationFunction(animation1);
     objects.push_back (ram);
 
     Mesh rhinoMesh;
@@ -65,6 +74,7 @@ void Scene::buildDefaultScene () {
     Material rhinoMat (1.0f, 0.2f, Vec3Df (0.6f, 0.6f, 0.7f));
     Object rhino (rhinoMesh, rhinoMat);
     rhino.setTrans (Vec3Df (-1.f, -1.0f, 0.4f));
+	rhino.setAnimationFunction(animation2);
     objects.push_back (rhino);
     Mesh gargMesh;
     gargMesh.loadOFF ("models/gargoyle.off");

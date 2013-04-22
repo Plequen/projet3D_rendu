@@ -69,6 +69,9 @@ private :
 	QRadioButton* softShadowsButton; 
 	QLabel* raysPTLabel;
 	QLabel* iterPTLabel;
+
+	QImage* image;
+	QImage computedImage;
 };
 
 #endif // WINDOW_H

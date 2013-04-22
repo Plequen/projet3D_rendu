@@ -156,7 +156,6 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 				}
 			}
 			occlusionRate = intensityAO * (1.f - ((float) occlusions) / raysAO);
-			//c += intensityAO * Vec3Df(occlusionRate, occlusionRate, occlusionRate);
 		}
 		if (ambientOcclusionMode != AOOnly) {
 			float distShadow;

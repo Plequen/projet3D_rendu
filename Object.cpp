@@ -28,6 +28,21 @@ Object::Object (const Mesh & mesh, const Material & mat) : mesh (mesh), mat (mat
 	double sec2 = (double) ( end-begin ) / CLOCKS_PER_SEC;
 	std::cout << "kdtree2 built" << std::endl;
 	cout << "KDTree build v2 : " << sec2 << "sec" << endl << endl;
+
+	animationFunction = NULL;
+}
+
+void Object::setAnimationFunction(Vec3Df (*function)(Vec3Df&, unsigned int)) {
+	animationFunction = function;
+}
+
+void Object::animate(unsigned int t) {
+	if (animationFunction != NULL)
+		trans = animationFunction(initialTrans, t);
+}
+
+void Object::buildKDTree() {
+	kdTree2.buildKDTree(mesh);
 }
 
 bool Object::intersectsRay(Ray& ray, Vertex& intersectionPoint, float& t, unsigned int& leafId) const {
