@@ -109,23 +109,28 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 					reflectionDir[1] = base1[1] * aux[0] + base2[1] * aux[1] + reflectionDir[1] * aux[2];
 					reflectionDir[2] = base1[2] * aux[0] + base2[2] * aux[1] + reflectionDir[2] * aux[2];
 				}
+				bool intersectReflexion=false;
 				for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
 					const Object& ob = scene->getObjects()[n];
 					Ray reflexionRay(intersectedVertex.getPos() + auxO.getTrans() - ob.getTrans(),reflectionDir);
 					if (ob.intersectsRay(reflexionRay, intersectionReflexion,
 								distReflexion, leafIdReflexion)) {
 
+						intersectReflexion=true;
 						dir=-(intersectedVertex.getPos()+auxO.getTrans()-(intersectionReflexion.getPos()+ob.getTrans()));
 						intersectedObject=n;
 						intersectionReflexionTemp=intersectionReflexion;
 					}
 				}
-				intersectedVertex=intersectionReflexionTemp;
-				dir.normalize();
 				nbReflexion++;
-				listVertexIntersected.push_back(intersectedVertex);
-				listObjectsIntersected.push_back(intersectedObject);
-				listDirectionIntersected.push_back(dir);
+				if(intersectReflexion)
+				{
+					intersectedVertex=intersectionReflexionTemp;
+					dir.normalize();
+					listVertexIntersected.push_back(intersectedVertex);
+					listObjectsIntersected.push_back(intersectedObject);
+					listDirectionIntersected.push_back(dir);
+				}
 			}
 		}
 
@@ -135,12 +140,13 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 			intersectedObject=listObjectsIntersected[i];
 			dir=listDirectionIntersected[i];
 			const Object& o = scene->getObjects()[intersectedObject];
-			
+
 			float visibility = (float) nbPointsDisc;
 			float occlusionRate = 1.f;
-			
+
 			colorsIntersected.push_back(computeColor(scene, intersectedVertex, o, dir, iterations, visibility, occlusionRate));
 
+			
 			listVisibilitiesIntersected.push_back(visibility);
 			listOcclusionRatesIntersected.push_back(occlusionRate);
 
@@ -165,18 +171,12 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 		{
 			finalColor=colorsIntersected[colorsIntersected.size()-1];
 			for(unsigned i=0; i<listVertexIntersected.size(); i++)
-				finalColor*=listVisibilitiesIntersected[i]*listOcclusionRatesIntersected[i];
-
-//Trouver formule qui permette de prendre en compte la couleur du miroir et le coefficient de reflexion
-/*
-			Vec3Df lastColor=colorsIntersected[colorsIntersected.size()-1];
-			for(unsigned i=colorsIntersected.size()-1; i>=0; i--)
 			{
-				if(scene->getObjects()[intersectedObject].getMaterial().getReflexionCoef()<1.0f)
-				{
-				}
+				finalColor*=listVisibilitiesIntersected[i]*listOcclusionRatesIntersected[i];
+				if(scene->getObjects()[listObjectsIntersected[i]].getMaterial().getReflexionCoef()>0.001f && mirrorsMode == MEnabled && i>0)
+					finalColor*=scene->getObjects()[listObjectsIntersected[i]].getMaterial().getReflexionCoef();
 			}
-*/
+
 		}
 	}
 
