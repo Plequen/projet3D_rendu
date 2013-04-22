@@ -46,7 +46,7 @@ public slots :
 	void setIntensityAO(int i);
 	void setLightDiscretization(int i);
 	void setMirrorsMode(int m);
-	void setGlossiness(int m);
+	void setNbMaxReflexion(int m);
 	void setRaysPT(int r);
 	void setIterationsPT(int i);
     

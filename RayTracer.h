@@ -36,7 +36,7 @@ public:
 	void setIntensityAO(float i) { intensityAO = i; } 
 	void setLightDiscretization(int d) { nbPointsDisc = d; } 
 	void setMirrorsMode(int m) { mirrorsMode = static_cast<MirrorsMode>(m); }
-	void setGlossiness(float c) { glossiness = c; } 
+	void setNbMaxReflexion(int m) { nbMaxReflexion = m; } 
 	void setRaysPT(int r) { raysPT = r; } 
 	void setIterationsPT(int i) { iterationsPT = i; } 
 	
@@ -67,7 +67,7 @@ private:
 	float percentageAO;
 	float coneAO;
 	float intensityAO;
-	float glossiness;
+	int nbMaxReflexion;
 	unsigned int nbPointsDisc; // nb of points on the area light source (discretization)
 	unsigned int raysPT;
 	unsigned int iterationsPT;

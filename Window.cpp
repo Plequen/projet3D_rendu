@@ -148,8 +148,8 @@ void Window::setMirrorsMode(int m) {
 	RayTracer::getInstance()->setMirrorsMode(m);
 }
 
-void Window::setGlossiness(int c) {
-	RayTracer::getInstance()->setGlossiness(float (c));
+void Window::setNbMaxReflexion(int c) {
+	RayTracer::getInstance()->setNbMaxReflexion(c);
 }
 
 void Window::setRaysPT(int r) {
@@ -320,35 +320,35 @@ void Window::initControlWidget2() {
 	rayLayout->addLayout(intensityAOLayout);
 
 	// mirrors settings
-	QHBoxLayout* glossinessLayout = new QHBoxLayout();
-	QLabel* glossinessLabel = new QLabel("Glossiness ", rayGroupBox);
+	QHBoxLayout* maxReflexion = new QHBoxLayout();
+	QLabel* maxReflexionLabel = new QLabel("Nb Reflexion Max ", rayGroupBox);
 	QLabel* mirrorsLabel = new QLabel("Mirrors", rayGroupBox);
 	QButtonGroup* mirrorsButtonGroup = new QButtonGroup(rayGroupBox);
 	QRadioButton* mirrorsDisabledButton = new QRadioButton("Disabled", rayGroupBox);
 	QRadioButton* mirrorsEnabledButton = new QRadioButton("Enabled", rayGroupBox);
-	QSlider* mirrorsGlossySlider = new QSlider(Qt::Horizontal, rayGroupBox);
-	mirrorsGlossySlider->setRange(1, 100);
-	mirrorsGlossySlider->setValue(0);
+	QSlider* mirrorsMaxReflexion = new QSlider(Qt::Horizontal, rayGroupBox);
+	mirrorsMaxReflexion->setRange(0, 10);
+	mirrorsMaxReflexion->setValue(1);
 	mirrorsButtonGroup->addButton(mirrorsDisabledButton, static_cast<int>(RayTracer::MDisabled)); 
 	mirrorsButtonGroup->addButton(mirrorsEnabledButton, static_cast<int>(RayTracer::MEnabled)); 
-	glossinessLayout->addWidget(glossinessLabel);
-	glossinessLayout->addWidget(mirrorsGlossySlider);
-	connect(mirrorsGlossySlider, SIGNAL(valueChanged(int)), this, SLOT(setGlossiness(int)));
+	maxReflexion->addWidget(maxReflexionLabel);
+	maxReflexion->addWidget(mirrorsMaxReflexion);
+	connect(mirrorsMaxReflexion, SIGNAL(valueChanged(int)), this, SLOT(setNbMaxReflexion(int)));
 	mirrorsDisabledButton->setChecked(true);
 	connect(mirrorsButtonGroup, SIGNAL(buttonClicked(int)), this, SLOT(setMirrorsMode(int)));
 
 	rayLayout->addWidget(mirrorsLabel);
 	rayLayout->addWidget(mirrorsDisabledButton);
 	rayLayout->addWidget(mirrorsEnabledButton);
-	rayLayout->addLayout(glossinessLayout);
+	rayLayout->addLayout(maxReflexion);
 
 	// path-tracing settings
 	QLabel* ptLabel = new QLabel("Path tracing", rayGroupBox);
 	QHBoxLayout* raysPTLayout = new QHBoxLayout();
 	QLabel* raysPTLabel0 = new QLabel("Rays ", rayGroupBox);
 	QSlider* raysPTSlider = new QSlider(Qt::Horizontal, rayGroupBox);
-	raysPTSlider->setRange(1, 300);
-	raysPTSlider->setValue(10);
+	raysPTSlider->setRange(0, 10);
+	raysPTSlider->setValue(1);
 	raysPTLabel = new QLabel("10", rayGroupBox);
 	connect(raysPTSlider, SIGNAL(valueChanged(int)), this, SLOT(setRaysPT(int)));
 	raysPTLayout->addWidget(raysPTLabel0);

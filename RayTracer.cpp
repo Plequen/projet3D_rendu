@@ -18,6 +18,8 @@
 
 static RayTracer * instance = NULL;
 
+
+
 RayTracer * RayTracer::getInstance () {
 	if (instance == NULL)
 		instance = new RayTracer ();
@@ -43,8 +45,6 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 
 	Scene* scene = Scene::getInstance();
 
-	bool glossy=true;
-
 	bool hasIntersection = false;
 	Vertex intersection;
 	unsigned int leafId;
@@ -65,17 +65,29 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 			intersectedLeafId = leafId;
 		}
 	}
-
+	
+	Vec3Df finalColor(0.0f,0.0f,0.0f);
+	unsigned nbColors;
 	// compute the color to give to the current pixel
-	Vec3Df c(0.f, 0.f, 0.f);
 	if (hasIntersection) {
+		vector<Vec3Df> colorsIntersected;
 		// if object o is a mirror
 		// then we do all the operations (shadows, phong shading, ambient occlusion)
 		// on the reflected point
+
+		vector<Vertex> listVertexIntersected;
+		listVertexIntersected.push_back(intersectedVertex);
+		vector<float> listVisibilitiesIntersected;
+		vector<float> listOcclusionRatesIntersected;
+		vector<unsigned int> listObjectsIntersected;
+		listObjectsIntersected.push_back(intersectedObject);
+		vector<Vec3Df> listDirectionIntersected;
+		listDirectionIntersected.push_back(dir);
+
 		if (mirrorsMode == MEnabled) 
 		{
 			unsigned nbReflexion=0;
-			while(  scene->getObjects()[intersectedObject].getMaterial().isMirror() && nbReflexion < NB_MAX_REFLEXION)
+			while(  scene->getObjects()[intersectedObject].getMaterial().getReflexionCoef()>0.0f && nbReflexion < nbMaxReflexion)
 			{
 				const Object& auxO = scene->getObjects()[intersectedObject];
 				float distReflexion=INFINITE_DISTANCE;
@@ -84,14 +96,14 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 				unsigned int leafIdReflexion;
 				Vec3Df reflectionDir = 2*Vec3Df::dotProduct(intersectedVertex.getNormal(), -dir)
 					*intersectedVertex.getNormal() + dir;
-				if(glossiness>0.0f)
+				if(auxO.getMaterial().getGlossiness()>0.0f)
 				{
 					Vec3Df base1(0, -reflectionDir[2], reflectionDir[1]);
 					Vec3Df base2 = Vec3Df::crossProduct(reflectionDir, base1);
 					// computes a random direction for the ray
 					float rdm = (float) rand() / ((float) RAND_MAX);
 					float rdm2 = (float) rand() / ((float) RAND_MAX);
-					Vec3Df tmp (1.f, M_PI * rdm * ((glossiness/10) / 180.f) / 2.f, rdm2 * 2 * M_PI);
+					Vec3Df tmp (1.f, M_PI * rdm * ((auxO.getMaterial().getGlossiness()) / 180.f) / 2.f, rdm2 * 2 * M_PI);
 					Vec3Df aux = Vec3Df::polarToCartesian(tmp);
 					// places the direction in the hemisphere supported by the normal of the point
 					reflectionDir[0] = base1[0] * aux[0] + base2[0] * aux[1] + reflectionDir[0] * aux[2];
@@ -112,146 +124,179 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 				intersectedVertex=intersectionReflexionTemp;
 				dir.normalize();
 				nbReflexion++;
+				listVertexIntersected.push_back(intersectedVertex);
+				listObjectsIntersected.push_back(intersectedObject);
+				listDirectionIntersected.push_back(dir);
 			}
 		}
 
-		const Object& o = scene->getObjects()[intersectedObject];
-		const Material& material = o.getMaterial();
-		// intersected point in the object reference : intersectedPoint
-		// intersected point in the world reference : intersectedPoint + o.getTrans()
-		// let's put the intersected point in the world reference
-		const Vec3Df& intersectedPoint = intersectedVertex.getPos() + o.getTrans();
-		Vec3Df normal = intersectedVertex.getNormal();
-		normal.normalize();
-		// color the pixel following the leaf it belongs to in the kdtree
-		//	c = Vec3Df(intersectedLeafId % 3 == 0 ? 1.0f : 0.0f, intersectedLeafId % 3 == 1 ? 1.0f : 0.0f, intersectedLeafId % 3 == 2 ? 1.0f : 0.0f);
-		float occlusionRate = 1.f;
-		if (ambientOcclusionMode != AODisabled) {
-			float sphereRadius = percentageAO * scene->getBoundingBox().getSize();
-			Vertex intersectionOcclusion;
-			unsigned int leafIdOcclusion;
-			unsigned int occlusions = 0;
-			Vec3Df base1(0, -normal[2], normal[1]);
-			Vec3Df base2 = Vec3Df::crossProduct(normal, base1);
-			Vec3Df rayDirection;
-			for (unsigned int k = 0 ; k < raysAO ; k++) {
-				// computes a random direction for the ray
-				float rdm = (float) rand() / ((float) RAND_MAX);
-				float rdm2 = (float) rand() / ((float) RAND_MAX);
-				Vec3Df tmp (1.f, M_PI * rdm * (coneAO / 180.f) / 2.f, rdm2 * 2 * M_PI);
-				Vec3Df aux = Vec3Df::polarToCartesian(tmp);
-				// places the direction in the hemisphere supported by the normal of the point
-				rayDirection[0] = base1[0] * aux[0] + base2[0] * aux[1] + normal[0] * aux[2];
-				rayDirection[1] = base1[1] * aux[0] + base2[1] * aux[1] + normal[1] * aux[2];
-				rayDirection[2] = base1[2] * aux[0] + base2[2] * aux[1] + normal[2] * aux[2];
-				float distOcclusion = sphereRadius; 
-				for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
-					const Object& ob = scene->getObjects()[n];
-					Ray occlusionRay(intersectedPoint - ob.getTrans(), rayDirection);
-					if (ob.intersectsRay(occlusionRay, intersectionOcclusion, distOcclusion, leafIdOcclusion)) {
-						occlusions++;
-						break;
-					}
-				}
-			}
-			occlusionRate = intensityAO * (1.f - ((float) occlusions) / raysAO);
-			//c += intensityAO * Vec3Df(occlusionRate, occlusionRate, occlusionRate);
-		}
-		if (ambientOcclusionMode != AOOnly) {
-			float distShadow;
-			Vertex intersectionShadow;
-			unsigned int leafIdShadow;
-			//vector<Light>& sceneLights = scene->getLights();
-			vector<AreaLight>& sceneLights = scene->getAreaLights();
-			//
-			// Phong Shading
-			//
-			for (unsigned int k = 0 ; k < sceneLights.size() ; k++) {
-				Vec3Df lightDirection = sceneLights[k].getPos() - intersectedPoint;
-				lightDirection.normalize();
-
-				// shadows
-				// visibility is between O and 1, 0 if not visible, 1 is completely visible
-				float visibility = (float) nbPointsDisc;
-
-				if (shadowsMode == Hard) {
-					distShadow = INFINITE_DISTANCE;
+		for(unsigned i=0; i<listVertexIntersected.size(); i++)
+		{
+			Vec3Df c(0.f, 0.f, 0.f);
+			intersectedVertex=listVertexIntersected[i];
+			intersectedObject=listObjectsIntersected[i];
+			dir=listDirectionIntersected[i];
+			const Object& o = scene->getObjects()[intersectedObject];
+			//computeColor(Vertex intersectedVertex, o, dir);
+			const Material& material = o.getMaterial();
+			// intersected point in the object reference : intersectedPoint
+			// intersected point in the world reference : intersectedPoint + o.getTrans()
+			// let's put the intersected point in the world reference
+			const Vec3Df& intersectedPoint = intersectedVertex.getPos() + o.getTrans();
+			Vec3Df normal = intersectedVertex.getNormal();
+			normal.normalize();
+			// color the pixel following the leaf it belongs to in the kdtree
+			//	c = Vec3Df(intersectedLeafId % 3 == 0 ? 1.0f : 0.0f, intersectedLeafId % 3 == 1 ? 1.0f : 0.0f, intersectedLeafId % 3 == 2 ? 1.0f : 0.0f);
+			float occlusionRate = 1.f;
+			if (ambientOcclusionMode != AODisabled) {
+				float sphereRadius = percentageAO * scene->getBoundingBox().getSize();
+				Vertex intersectionOcclusion;
+				unsigned int leafIdOcclusion;
+				unsigned int occlusions = 0;
+				Vec3Df base1(0, -normal[2], normal[1]);
+				Vec3Df base2 = Vec3Df::crossProduct(normal, base1);
+				Vec3Df rayDirection;
+				for (unsigned int k = 0 ; k < raysAO ; k++) {
+					// computes a random direction for the ray
+					float rdm = (float) rand() / ((float) RAND_MAX);
+					float rdm2 = (float) rand() / ((float) RAND_MAX);
+					Vec3Df tmp (1.f, M_PI * rdm * (coneAO / 180.f) / 2.f, rdm2 * 2 * M_PI);
+					Vec3Df aux = Vec3Df::polarToCartesian(tmp);
+					// places the direction in the hemisphere supported by the normal of the point
+					rayDirection[0] = base1[0] * aux[0] + base2[0] * aux[1] + normal[0] * aux[2];
+					rayDirection[1] = base1[1] * aux[0] + base2[1] * aux[1] + normal[1] * aux[2];
+					rayDirection[2] = base1[2] * aux[0] + base2[2] * aux[1] + normal[2] * aux[2];
+					float distOcclusion = sphereRadius; 
 					for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
 						const Object& ob = scene->getObjects()[n];
-						Ray shadowRay(intersectedPoint - ob.getTrans(), lightDirection);
-						if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) {
-							visibility = 0.0f;
+						Ray occlusionRay(intersectedPoint - ob.getTrans(), rayDirection);
+						if (ob.intersectsRay(occlusionRay, intersectionOcclusion, distOcclusion, leafIdOcclusion)) {
+							occlusions++;
 							break;
 						}
 					}
 				}
-				else if (shadowsMode == Soft) {
-					// random set of points on the area light source
-					sceneLights[k].discretize(nbPointsDisc);
-					const vector<Vec3Df>& discretization = sceneLights[k].getDiscretization();
+				occlusionRate = intensityAO * (1.f - ((float) occlusions) / raysAO);
+				//c += intensityAO * Vec3Df(occlusionRate, occlusionRate, occlusionRate);
+			}
+			float visibility = (float) nbPointsDisc;
+			if (ambientOcclusionMode != AOOnly) {
+				float distShadow;
+				Vertex intersectionShadow;
+				unsigned int leafIdShadow;
+				//vector<Light>& sceneLights = scene->getLights();
+				vector<AreaLight>& sceneLights = scene->getAreaLights();
+				//
+				// Phong Shading
+				//
+				for (unsigned int k = 0 ; k < sceneLights.size() ; k++) {
+					Vec3Df lightDirection = sceneLights[k].getPos() - intersectedPoint;
+					lightDirection.normalize();
 
-					// cast one ray for each discret point of the area light source
-					for(unsigned p=0; p<nbPointsDisc; p++)
-					{
+					// shadows
+					// visibility is between O and 1, 0 if not visible, 1 is completely visible
+
+					if (shadowsMode == Hard) {
 						distShadow = INFINITE_DISTANCE;
-						Vec3Df lightPosDisc=discretization[p];
-						Vec3Df directionToLightDisc = lightPosDisc - (intersectedPoint+o.getTrans());
-						directionToLightDisc.normalize();
-
-						for (unsigned int n = 0; n < scene->getObjects().size (); n++) 
-						{
+						for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
 							const Object& ob = scene->getObjects()[n];
-							Ray shadowRay(intersectedPoint + o.getTrans() - ob.getTrans(), directionToLightDisc);
-							if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) 
-							{
-								visibility--;
+							Ray shadowRay(intersectedPoint - ob.getTrans(), lightDirection);
+							if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) {
+								visibility = 0.0f;
 								break;
 							}
 						}
 					}
+					else if (shadowsMode == Soft) {
+						// random set of points on the area light source
+						sceneLights[k].discretize(nbPointsDisc);
+						const vector<Vec3Df>& discretization = sceneLights[k].getDiscretization();
+
+						// cast one ray for each discret point of the area light source
+						for(unsigned p=0; p<nbPointsDisc; p++)
+						{
+							distShadow = INFINITE_DISTANCE;
+							Vec3Df lightPosDisc=discretization[p];
+							Vec3Df directionToLightDisc = lightPosDisc - (intersectedPoint+o.getTrans());
+							directionToLightDisc.normalize();
+
+							for (unsigned int n = 0; n < scene->getObjects().size (); n++) 
+							{
+								const Object& ob = scene->getObjects()[n];
+								Ray shadowRay(intersectedPoint + o.getTrans() - ob.getTrans(), directionToLightDisc);
+								if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) 
+								{
+									visibility--;
+									break;
+								}
+							}
+						}
+					}
+					visibility /= (float) nbPointsDisc;
+					listVisibilitiesIntersected.push_back(visibility);
+					listOcclusionRatesIntersected.push_back(occlusionRate);
+
+					float diff = Vec3Df::dotProduct(normal, lightDirection);
+					Vec3Df r = 2 * diff * normal - lightDirection;
+					if (diff <= EPSILON)
+						diff = 0.f;
+					r.normalize();
+					float spec = Vec3Df::dotProduct(r, -dir); 
+					if (spec <= EPSILON)
+						spec = 0.f;
+					c += /*visibility * */sceneLights[k].getIntensity() * (material.getDiffuse() * diff + material.getSpecular() * spec) * sceneLights[k].getColor() * material.getColor();
 				}
-				visibility /= (float) nbPointsDisc;
+			}
+			if (ambientOcclusionMode == AOOnly)
+			{
+				//c += Vec3Df(occlusionRate, occlusionRate, occlusionRate);
+			}
+			else
+			{
+				//c *= occlusionRate;
+			}
+			// path-tracing : recursive ray-tracing
+			if (iterations > 1) {
+				Vec3Df base1(0, -normal[2], normal[1]);
+				Vec3Df base2 = Vec3Df::crossProduct(normal, base1);
+				Vec3Df rayDirection;
+				for (unsigned int i = 0 ; i < raysPT ; i++) {
+					// computes a random direction for the ray
+					float rdm = (float) rand() / ((float) RAND_MAX);
+					float rdm2 = (float) rand() / ((float) RAND_MAX);
+					Vec3Df tmp (1.f, M_PI * rdm * (180.f / 180.f) / 2.f, rdm2 * 2 * M_PI);
+					Vec3Df aux = Vec3Df::polarToCartesian(tmp);
+					// places the direction in the hemisphere supported by the normal of the point
+					rayDirection[0] = base1[0] * aux[0] + base2[0] * aux[1] + normal[0] * aux[2];
+					rayDirection[1] = base1[1] * aux[0] + base2[1] * aux[1] + normal[1] * aux[2];
+					rayDirection[2] = base1[2] * aux[0] + base2[2] * aux[1] + normal[2] * aux[2];
 
-				if (visibility < EPSILON)
-					continue;
+					c += (1.f / (raysPT)) * rayTrace(intersectedPoint, rayDirection, iterations - 1);
+				}
+			}
 
-				float diff = Vec3Df::dotProduct(normal, lightDirection);
-				Vec3Df r = 2 * diff * normal - lightDirection;
-				if (diff <= EPSILON)
-					diff = 0.f;
-				r.normalize();
-				float spec = Vec3Df::dotProduct(r, -dir); 
-				if (spec <= EPSILON)
-					spec = 0.f;
-				c += visibility * sceneLights[k].getIntensity() * (material.getDiffuse() * diff + material.getSpecular() * spec) * sceneLights[k].getColor() * material.getColor();
+			// pure color without any shadow or ambient occlusion
+			colorsIntersected.push_back(c);
+		//	finalColor+=colorsIntersected[i];
+
+			//Point is not visible, no need do compute the color of the next reflected point
+			if(visibility<0.001f || occlusionRate < 0.001f)
+			{
+				for(unsigned j=i+1; j<listVertexIntersected.size(); j++)
+				{
+					listVisibilitiesIntersected.push_back(0.0f);
+					listOcclusionRatesIntersected.push_back(0.0f);
+					colorsIntersected.push_back(Vec3Df(0.0f,0.0f,0.0f));
+				}
+				break;
 			}
 		}
-		if (ambientOcclusionMode == AOOnly)
-			c += Vec3Df(occlusionRate, occlusionRate, occlusionRate);
-		else
-			c *= occlusionRate;
-
-		// path-tracing : recursive ray-tracing
-		if (iterations > 1) {
-			Vec3Df base1(0, -normal[2], normal[1]);
-			Vec3Df base2 = Vec3Df::crossProduct(normal, base1);
-			Vec3Df rayDirection;
-			for (unsigned int i = 0 ; i < raysPT ; i++) {
-				// computes a random direction for the ray
-				float rdm = (float) rand() / ((float) RAND_MAX);
-				float rdm2 = (float) rand() / ((float) RAND_MAX);
-				Vec3Df tmp (1.f, M_PI * rdm * (180.f / 180.f) / 2.f, rdm2 * 2 * M_PI);
-				Vec3Df aux = Vec3Df::polarToCartesian(tmp);
-				// places the direction in the hemisphere supported by the normal of the point
-				rayDirection[0] = base1[0] * aux[0] + base2[0] * aux[1] + normal[0] * aux[2];
-				rayDirection[1] = base1[1] * aux[0] + base2[1] * aux[1] + normal[1] * aux[2];
-				rayDirection[2] = base1[2] * aux[0] + base2[2] * aux[1] + normal[2] * aux[2];
-
-				c += (1.f / (raysPT)) * rayTrace(intersectedPoint, rayDirection, iterations - 1);
-			}
-		}
+		finalColor=colorsIntersected[colorsIntersected.size()-1];
+		for(unsigned i=0; i<listVertexIntersected.size(); i++)
+			finalColor*=listVisibilitiesIntersected[i]*listOcclusionRatesIntersected[i];
 	}
-	return c;	
+
+	return finalColor;	
 }
 
 QImage RayTracer::render(const Vec3Df& camPos,
