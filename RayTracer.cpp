@@ -14,6 +14,7 @@
 
 #define INFINITE_DISTANCE	1000000.0f		
 #define EPSILON	0.00001f
+#define NB_MAX_REFLEXION 10
 
 static RayTracer * instance = NULL;
 
@@ -69,25 +70,36 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 		// if object o is a mirror
 		// then we do all the operations (shadows, phong shading, ambient occlusion)
 		// on the reflected point
-		if (mirrorsMode == MEnabled && scene->getObjects()[intersectedObject].getMaterial().isMirror())
+		if (mirrorsMode == MEnabled) 
 		{
-			const Object& auxO = scene->getObjects()[intersectedObject];
-			float distReflexion=INFINITE_DISTANCE;
-			Vertex intersectionReflexion;
-			unsigned int leafIdReflexion;
-			Vec3Df reflectionDir = 2*Vec3Df::dotProduct(intersectedVertex.getNormal(), -dir)
-				*intersectedVertex.getNormal() + dir;
-			for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
-				const Object& ob = scene->getObjects()[n];
-				Ray reflexionRay(intersectedVertex.getPos() + auxO.getTrans() - ob.getTrans(),reflectionDir);
-				if (ob.intersectsRay(reflexionRay, intersectionReflexion,
-							distReflexion, leafIdReflexion)) {
+			unsigned nbReflexion=0;
+			while(  scene->getObjects()[intersectedObject].getMaterial().isMirror() && nbReflexion < NB_MAX_REFLEXION)
+			{
+				const Object& auxO = scene->getObjects()[intersectedObject];
+				float distReflexion=INFINITE_DISTANCE;
+				Vertex intersectionReflexion;
+				Vertex intersectionReflexionTemp=intersectedVertex;
+				Vec3Df dirTemp=dir;
+				unsigned int intersectedObjectTemp=intersectedObject;
+				unsigned int leafIdReflexion;
+				Vec3Df reflectionDir = 2*Vec3Df::dotProduct(intersectedVertex.getNormal(), -dir)
+					*intersectedVertex.getNormal() + dir;
+				for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
+					const Object& ob = scene->getObjects()[n];
+					Ray reflexionRay(intersectedVertex.getPos() + auxO.getTrans() - ob.getTrans(),reflectionDir);
+					if (ob.intersectsRay(reflexionRay, intersectionReflexion,
+								distReflexion, leafIdReflexion)) {
 
-					dir=-(origin-(intersectionReflexion.getPos()+ob.getTrans()));
-					dir.normalize();
-					intersectedObject=n;
-					intersectedVertex=intersectionReflexion;
+						dirTemp=-(intersectedVertex.getPos()+auxO.getTrans()-(intersectionReflexion.getPos()+ob.getTrans()));
+						intersectedObjectTemp=n;
+						intersectionReflexionTemp=intersectionReflexion;
+					}
 				}
+				intersectedObject=intersectedObjectTemp;
+				intersectedVertex=intersectionReflexionTemp;
+				dir=dirTemp;
+				dir.normalize();
+				nbReflexion++;
 			}
 		}
 
@@ -100,7 +112,7 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 		Vec3Df normal = intersectedVertex.getNormal();
 		normal.normalize();
 		// color the pixel following the leaf it belongs to in the kdtree
-	//	c = Vec3Df(intersectedLeafId % 3 == 0 ? 1.0f : 0.0f, intersectedLeafId % 3 == 1 ? 1.0f : 0.0f, intersectedLeafId % 3 == 2 ? 1.0f : 0.0f);
+		//	c = Vec3Df(intersectedLeafId % 3 == 0 ? 1.0f : 0.0f, intersectedLeafId % 3 == 1 ? 1.0f : 0.0f, intersectedLeafId % 3 == 2 ? 1.0f : 0.0f);
 		if (ambientOcclusionMode != AODisabled) {
 			float sphereRadius = percentageAO * scene->getBoundingBox().getSize();
 			Vertex intersectionOcclusion;
@@ -225,13 +237,13 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 }
 
 QImage RayTracer::render(const Vec3Df& camPos,
-			const Vec3Df& direction,
-			const Vec3Df& upVector,
-			const Vec3Df& rightVector,
-			float fieldOfView,
-			float aspectRatio,
-			unsigned int screenWidth,
-			unsigned int screenHeight) {
+		const Vec3Df& direction,
+		const Vec3Df& upVector,
+		const Vec3Df& rightVector,
+		float fieldOfView,
+		float aspectRatio,
+		unsigned int screenWidth,
+		unsigned int screenHeight) {
 	QImage image (QSize (screenWidth, screenHeight), QImage::Format_RGB888);
 
 	QProgressDialog progressDialog ("Raytracing...", "Cancel", 0, 100);
@@ -254,7 +266,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 					Vec3Df step = stepX + stepY;
 					Vec3Df dir = direction + step;
 					dir.normalize();
-					
+
 					c += rayTrace(camPos, dir, iterationsPT);
 				}
 			}

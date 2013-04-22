@@ -49,7 +49,10 @@ void Scene::buildDefaultScene () {
     groundMesh.loadOFF ("models/ground.off");
     Material groundMat(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.5f), true);
     Object ground (groundMesh, groundMat);    
+    Object ground2 (groundMesh, groundMat);    
+    ground2.setTrans (Vec3Df (0.f, 0.0f, 6.f));
     objects.push_back (ground);
+    objects.push_back (ground2);
     Mesh ramMesh;
     ramMesh.loadOFF ("models/ram.off");
     Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f));
