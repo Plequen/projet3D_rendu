@@ -126,6 +126,7 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 		normal.normalize();
 		// color the pixel following the leaf it belongs to in the kdtree
 		//	c = Vec3Df(intersectedLeafId % 3 == 0 ? 1.0f : 0.0f, intersectedLeafId % 3 == 1 ? 1.0f : 0.0f, intersectedLeafId % 3 == 2 ? 1.0f : 0.0f);
+		float occlusionRate = 1.f;
 		if (ambientOcclusionMode != AODisabled) {
 			float sphereRadius = percentageAO * scene->getBoundingBox().getSize();
 			Vertex intersectionOcclusion;
@@ -154,8 +155,8 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 					}
 				}
 			}
-			float occlusionRate = 1.f - ((float) occlusions) / raysAO;
-			c += intensityAO * Vec3Df(occlusionRate, occlusionRate, occlusionRate);
+			occlusionRate = intensityAO * (1.f - ((float) occlusions) / raysAO);
+			//c += intensityAO * Vec3Df(occlusionRate, occlusionRate, occlusionRate);
 		}
 		if (ambientOcclusionMode != AOOnly) {
 			float distShadow;
@@ -226,6 +227,11 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 				c += visibility * sceneLights[k].getIntensity() * (material.getDiffuse() * diff + material.getSpecular() * spec) * sceneLights[k].getColor() * material.getColor();
 			}
 		}
+		if (ambientOcclusionMode == AOOnly)
+			c += Vec3Df(occlusionRate, occlusionRate, occlusionRate);
+		else
+			c *= occlusionRate;
+
 		// path-tracing : recursive ray-tracing
 		if (iterations > 1) {
 			Vec3Df base1(0, -normal[2], normal[1]);

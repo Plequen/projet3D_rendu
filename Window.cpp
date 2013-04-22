@@ -128,7 +128,7 @@ void Window::setRadiusAO(int r) {
 
 void Window::setConeAO(int c) {
 	RayTracer::getInstance()->setConeAO(float (c));
-	coneAOLabel->setText(QString::number(c) + "°");
+	coneAOLabel->setText(QString::number(c));
 }
 
 void Window::setIntensityAO(int i) {
@@ -299,8 +299,8 @@ void Window::initControlWidget2() {
 	QLabel* intensityAOLabel0 = new QLabel("Intensity ", rayGroupBox);
 	QSlider* intensityAOSlider = new QSlider(Qt::Horizontal, rayGroupBox);
 	intensityAOSlider->setRange(0, 20);
-	intensityAOSlider->setValue(2);
-	intensityAOLabel = new QLabel("0.1", rayGroupBox);
+	intensityAOSlider->setValue(20);
+	intensityAOLabel = new QLabel("1", rayGroupBox);
 	connect(intensityAOSlider, SIGNAL(valueChanged(int)), this, SLOT(setIntensityAO(int)));
 	intensityAOLayout->addWidget(intensityAOLabel0);
 	intensityAOLayout->addWidget(intensityAOSlider);
@@ -345,7 +345,7 @@ void Window::initControlWidget2() {
 	QHBoxLayout* iterPTLayout = new QHBoxLayout();
 	QLabel* iterPTLabel0 = new QLabel("Iterations ", rayGroupBox);
 	QSlider* iterPTSlider = new QSlider(Qt::Horizontal, rayGroupBox);
-	iterPTSlider->setRange(0, 10);
+	iterPTSlider->setRange(1, 10);
 	iterPTSlider->setValue(1);
 	iterPTLabel = new QLabel("1", rayGroupBox);
 	connect(iterPTSlider, SIGNAL(valueChanged(int)), this, SLOT(setIterationsPT(int)));
