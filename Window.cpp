@@ -148,6 +148,10 @@ void Window::setMirrorsMode(int m) {
 	RayTracer::getInstance()->setMirrorsMode(m);
 }
 
+void Window::setGlossiness(int c) {
+	RayTracer::getInstance()->setGlossiness(float (c));
+}
+
 void Window::setRaysPT(int r) {
 	RayTracer::getInstance()->setRaysPT(r);
 	raysPTLabel->setText(QString::number(r));
@@ -316,18 +320,27 @@ void Window::initControlWidget2() {
 	rayLayout->addLayout(intensityAOLayout);
 
 	// mirrors settings
+	QHBoxLayout* glossinessLayout = new QHBoxLayout();
+	QLabel* glossinessLabel = new QLabel("Glossiness ", rayGroupBox);
 	QLabel* mirrorsLabel = new QLabel("Mirrors", rayGroupBox);
 	QButtonGroup* mirrorsButtonGroup = new QButtonGroup(rayGroupBox);
 	QRadioButton* mirrorsDisabledButton = new QRadioButton("Disabled", rayGroupBox);
 	QRadioButton* mirrorsEnabledButton = new QRadioButton("Enabled", rayGroupBox);
+	QSlider* mirrorsGlossySlider = new QSlider(Qt::Horizontal, rayGroupBox);
+	mirrorsGlossySlider->setRange(1, 100);
+	mirrorsGlossySlider->setValue(0);
 	mirrorsButtonGroup->addButton(mirrorsDisabledButton, static_cast<int>(RayTracer::MDisabled)); 
 	mirrorsButtonGroup->addButton(mirrorsEnabledButton, static_cast<int>(RayTracer::MEnabled)); 
+	glossinessLayout->addWidget(glossinessLabel);
+	glossinessLayout->addWidget(mirrorsGlossySlider);
+	connect(mirrorsGlossySlider, SIGNAL(valueChanged(int)), this, SLOT(setGlossiness(int)));
 	mirrorsDisabledButton->setChecked(true);
 	connect(mirrorsButtonGroup, SIGNAL(buttonClicked(int)), this, SLOT(setMirrorsMode(int)));
 
 	rayLayout->addWidget(mirrorsLabel);
 	rayLayout->addWidget(mirrorsDisabledButton);
 	rayLayout->addWidget(mirrorsEnabledButton);
+	rayLayout->addLayout(glossinessLayout);
 
 	// path-tracing settings
 	QLabel* ptLabel = new QLabel("Path tracing", rayGroupBox);

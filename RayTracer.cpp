@@ -84,15 +84,14 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 				unsigned int leafIdReflexion;
 				Vec3Df reflectionDir = 2*Vec3Df::dotProduct(intersectedVertex.getNormal(), -dir)
 					*intersectedVertex.getNormal() + dir;
-				if(glossy)
+				if(glossiness>0.0f)
 				{
-					float angleSolide=0.0f;
 					Vec3Df base1(0, -reflectionDir[2], reflectionDir[1]);
 					Vec3Df base2 = Vec3Df::crossProduct(reflectionDir, base1);
 					// computes a random direction for the ray
 					float rdm = (float) rand() / ((float) RAND_MAX);
 					float rdm2 = (float) rand() / ((float) RAND_MAX);
-					Vec3Df tmp (1.f, M_PI * rdm * (angleSolide / 180.f) / 2.f, rdm2 * 2 * M_PI);
+					Vec3Df tmp (1.f, M_PI * rdm * ((glossiness/10) / 180.f) / 2.f, rdm2 * 2 * M_PI);
 					Vec3Df aux = Vec3Df::polarToCartesian(tmp);
 					// places the direction in the hemisphere supported by the normal of the point
 					reflectionDir[0] = base1[0] * aux[0] + base2[0] * aux[1] + reflectionDir[0] * aux[2];
