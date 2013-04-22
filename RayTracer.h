@@ -14,6 +14,10 @@
 
 #include "Vec3D.h"
 
+class Vertex;
+class Object;
+class Scene;
+
 class RayTracer {
 public:
 	static RayTracer * getInstance ();
@@ -41,6 +45,7 @@ public:
 	void setIterationsPT(int i) { iterationsPT = i; } 
 	
 	Vec3Df rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int interations);
+	Vec3Df computeColor(Scene* scene, const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, unsigned iterations, float& visibility, float& occlusionRate);
 
     
 	QImage render (const Vec3Df & camPos,
