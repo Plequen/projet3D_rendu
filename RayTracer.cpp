@@ -166,6 +166,17 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 			finalColor=colorsIntersected[colorsIntersected.size()-1];
 			for(unsigned i=0; i<listVertexIntersected.size(); i++)
 				finalColor*=listVisibilitiesIntersected[i]*listOcclusionRatesIntersected[i];
+
+//Trouver formule qui permette de prendre en compte la couleur du miroir et le coefficient de reflexion
+/*
+			Vec3Df lastColor=colorsIntersected[colorsIntersected.size()-1];
+			for(unsigned i=colorsIntersected.size()-1; i>=0; i--)
+			{
+				if(scene->getObjects()[intersectedObject].getMaterial().getReflexionCoef()<1.0f)
+				{
+				}
+			}
+*/
 		}
 	}
 
