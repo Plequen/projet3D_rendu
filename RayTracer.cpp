@@ -67,7 +67,6 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 	}
 	
 	Vec3Df finalColor(0.0f,0.0f,0.0f);
-	unsigned nbColors;
 	// compute the color to give to the current pixel
 	if (hasIntersection) {
 		vector<Vec3Df> colorsIntersected;
@@ -232,9 +231,6 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 							}
 						}
 					}
-					visibility /= (float) nbPointsDisc;
-					listVisibilitiesIntersected.push_back(visibility);
-					listOcclusionRatesIntersected.push_back(occlusionRate);
 
 					float diff = Vec3Df::dotProduct(normal, lightDirection);
 					Vec3Df r = 2 * diff * normal - lightDirection;
@@ -247,14 +243,10 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 					c += /*visibility * */sceneLights[k].getIntensity() * (material.getDiffuse() * diff + material.getSpecular() * spec) * sceneLights[k].getColor() * material.getColor();
 				}
 			}
-			if (ambientOcclusionMode == AOOnly)
-			{
-				//c += Vec3Df(occlusionRate, occlusionRate, occlusionRate);
-			}
-			else
-			{
-				//c *= occlusionRate;
-			}
+
+			visibility /= (float) nbPointsDisc;
+			listVisibilitiesIntersected.push_back(visibility);
+			listOcclusionRatesIntersected.push_back(occlusionRate);
 			// path-tracing : recursive ray-tracing
 			if (iterations > 1) {
 				Vec3Df base1(0, -normal[2], normal[1]);
@@ -277,7 +269,6 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 
 			// pure color without any shadow or ambient occlusion
 			colorsIntersected.push_back(c);
-		//	finalColor+=colorsIntersected[i];
 
 			//Point is not visible, no need do compute the color of the next reflected point
 			if(visibility<0.001f || occlusionRate < 0.001f)
@@ -291,9 +282,17 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 				break;
 			}
 		}
-		finalColor=colorsIntersected[colorsIntersected.size()-1];
-		for(unsigned i=0; i<listVertexIntersected.size(); i++)
-			finalColor*=listVisibilitiesIntersected[i]*listOcclusionRatesIntersected[i];
+
+		if (ambientOcclusionMode == AOOnly)
+		{
+			finalColor = Vec3Df(listOcclusionRatesIntersected[0],listOcclusionRatesIntersected[0],listOcclusionRatesIntersected[0]);
+		}
+		else
+		{
+			finalColor=colorsIntersected[colorsIntersected.size()-1];
+			for(unsigned i=0; i<listVertexIntersected.size(); i++)
+				finalColor*=listVisibilitiesIntersected[i]*listOcclusionRatesIntersected[i];
+		}
 	}
 
 	return finalColor;	
