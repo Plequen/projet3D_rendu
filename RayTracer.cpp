@@ -126,35 +126,88 @@ void RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterati
 
 
 	if (hasIntersection) {
+		const Object& auxO = scene->getObjects()[intersectedObject];
 
-		verticesIntersected.push_back(intersectedVertex);
-		objectsIntersected.push_back(intersectedObject);
-		directionsIntersected.push_back(dir);
-
-		if (mirrorsMode == MEnabled) 
-		{
-			if(  scene->getObjects()[intersectedObject].getMaterial().getReflectivity()>0.0f && nbReflexion < nbMaxReflexion)
+			if(auxO.getMaterial().getRefraction()>1.0f)
 			{
-				nbReflexion++;
-				const Object& auxO = scene->getObjects()[intersectedObject];
-				Vec3Df reflectionDir = 2*Vec3Df::dotProduct(intersectedVertex.getNormal(), -dir)
-					*intersectedVertex.getNormal() + dir;
-				if(auxO.getMaterial().getGlossiness()>0.0f)
+				float n1;
+				float n2;
+				Vec3Df normal =intersectedVertex.getNormal();
+
+				//first intersection
+				if(verticesIntersected.size()==0)
 				{
-					Vec3Df base1(0, -reflectionDir[2], reflectionDir[1]);
-					Vec3Df base2 = Vec3Df::crossProduct(reflectionDir, base1);
-					// computes a random direction for the ray
-					float rdm = (float) rand() / ((float) RAND_MAX);
-					float rdm2 = (float) rand() / ((float) RAND_MAX);
-					Vec3Df tmp (1.f, M_PI * rdm * ((auxO.getMaterial().getGlossiness()) / 180.f) / 2.f, rdm2 * 2 * M_PI);
-					Vec3Df aux = Vec3Df::polarToCartesian(tmp);
-					// places the direction in the hemisphere supported by the normal of the point
-					reflectionDir[0] = base1[0] * aux[0] + base2[0] * aux[1] + reflectionDir[0] * aux[2];
-					reflectionDir[1] = base1[1] * aux[0] + base2[1] * aux[1] + reflectionDir[1] * aux[2];
-					reflectionDir[2] = base1[2] * aux[0] + base2[2] * aux[1] + reflectionDir[2] * aux[2];
+					n1=1.0f;
+					n2=auxO.getMaterial().getRefraction();
+				}
+				else
+				{
+					if(scene->getObjects()[objectsIntersected[objectsIntersected.size()-1]].getMaterial().getRefraction()>1.0f)
+					{
+						n1=auxO.getMaterial().getRefraction();	
+						n2=1.0f;
+						normal=-normal;
+					}
+					else
+					{
+						n1=1.0f;
+						n2=auxO.getMaterial().getRefraction();
+					}
 				}
 
-				rayTrace(intersectedVertex.getPos() + auxO.getTrans(),reflectionDir, iterations, nbReflexion, objectsIntersected, verticesIntersected, directionsIntersected);
+				float cos1 = Vec3Df::dotProduct(normal, -dir);
+				float cos2=1-((n1*n1)/(n2*n2))*(1-cos1*cos1);
+				if(cos2>0.0f)
+				{
+					cos2=sqrt(cos2);
+					Vec3Df refractedDir;
+					if(cos1>0.0f)
+						refractedDir=(n1/n2)*dir+((n1/n2)*cos1-cos2)*normal;
+					else
+						refractedDir=(n1/n2)*dir+((n1/n2)*cos1+cos2)*normal;
+
+					refractedDir.normalize();
+					rayTrace(intersectedVertex.getPos() + auxO.getTrans(),refractedDir, iterations, nbReflexion, objectsIntersected, verticesIntersected, directionsIntersected);
+				}
+				else
+				{
+					Vec3Df reflectedDir=dir+2*cos1*normal;
+					reflectedDir.normalize();
+					rayTrace(intersectedVertex.getPos() + auxO.getTrans(),reflectedDir, iterations, nbReflexion, objectsIntersected, verticesIntersected, directionsIntersected);
+
+				}
+			}
+		else
+		{ 
+			verticesIntersected.push_back(intersectedVertex);
+			objectsIntersected.push_back(intersectedObject);
+			directionsIntersected.push_back(dir);
+
+			if (mirrorsMode == MEnabled) 
+			{
+				if(  auxO.getMaterial().getReflectivity()>0.000001f && nbReflexion < nbMaxReflexion)
+				{
+					nbReflexion++;
+					Vec3Df reflectionDir = 2*Vec3Df::dotProduct(intersectedVertex.getNormal(), -dir)
+						*intersectedVertex.getNormal() + dir;
+					if(auxO.getMaterial().getGlossiness()>0.0f)
+					{
+						Vec3Df base1(0, -reflectionDir[2], reflectionDir[1]);
+						Vec3Df base2 = Vec3Df::crossProduct(reflectionDir, base1);
+						// computes a random direction for the ray
+						float rdm = (float) rand() / ((float) RAND_MAX);
+						float rdm2 = (float) rand() / ((float) RAND_MAX);
+						Vec3Df tmp (1.f, M_PI * rdm * ((auxO.getMaterial().getGlossiness()) / 180.f) / 2.f, rdm2 * 2 * M_PI);
+						Vec3Df aux = Vec3Df::polarToCartesian(tmp);
+						// places the direction in the hemisphere supported by the normal of the point
+						reflectionDir[0] = base1[0] * aux[0] + base2[0] * aux[1] + reflectionDir[0] * aux[2];
+						reflectionDir[1] = base1[1] * aux[0] + base2[1] * aux[1] + reflectionDir[1] * aux[2];
+						reflectionDir[2] = base1[2] * aux[0] + base2[2] * aux[1] + reflectionDir[2] * aux[2];
+					}
+					reflectionDir.normalize();
+
+					rayTrace(intersectedVertex.getPos() + auxO.getTrans(),reflectionDir, iterations, nbReflexion, objectsIntersected, verticesIntersected, directionsIntersected);
+				}
 			}
 		}
 	}
@@ -205,6 +258,8 @@ QImage RayTracer::render(const Vec3Df& camPos,
 	QProgressDialog progressDialog ("Raytracing...", "Cancel", 0, 100);
 	progressDialog.show ();
 	unsigned int raysPerPixel = antialiasingMode == Uniform ? aaGrid : 1;
+
+	transparencyMode=true;
 	for (unsigned int i = 0; i < screenWidth; i++) {
 		progressDialog.setValue ((100*i)/screenWidth);
 		for (unsigned int j = 0; j < screenHeight; j++) {
@@ -301,8 +356,15 @@ Vec3Df RayTracer::computeColor(const Vertex& intersectedVertex, const Object& o,
 					const Object& ob = scene->getObjects()[n];
 					Ray shadowRay(intersectedPoint - ob.getTrans(), lightDirection);
 					if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) {
-						visibility = 0.0f;
-						break;
+						if(ob.getMaterial().getTransparency()<0.0001f)
+						{
+							visibility=0.0f;
+							break;
+						}
+						else
+						{
+							visibility=ob.getMaterial().getTransparency()*nbPointsDisc;
+						}
 					}
 				}
 			}
@@ -325,8 +387,15 @@ Vec3Df RayTracer::computeColor(const Vertex& intersectedVertex, const Object& o,
 						Ray shadowRay(intersectedPoint + o.getTrans() - ob.getTrans(), directionToLightDisc);
 						if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) 
 						{
-							visibility--;
-							break;
+							if(ob.getMaterial().getTransparency()<0.0001f)
+							{
+								visibility--;
+								break;
+							}
+							else
+							{
+								visibility-=(1-ob.getMaterial().getTransparency());
+							}
 						}
 					}
 				}

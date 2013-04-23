@@ -47,8 +47,8 @@ void Scene::updateBoundingBox () {
 void Scene::buildDefaultScene () {
     Mesh groundMesh;
     groundMesh.loadOFF ("models/ground.off");
-    Material groundMat(0.8f, 0.2f, Vec3Df(0.0f,0.5f,0.5f), 0.0f, 0.5f, 0.2f);
-    Material groundMat2(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.0f), 0.0f, 0.5f, 0.1f);
+    Material groundMat(0.8f, 0.2f, Vec3Df(0.0f,0.5f,0.5f), 0.0f, 0.5f, 0.2f, 1.0f, 0.0f);
+    Material groundMat2(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.0f), 0.0f, 0.5f, 0.1f, 1.0f, 0.0f);
     Object ground (groundMesh, groundMat);    
     Object ground2 (groundMesh, groundMat2);    
     ground2.setTrans (Vec3Df (0.f, 0.0f, 6.f));
@@ -56,7 +56,7 @@ void Scene::buildDefaultScene () {
     objects.push_back (ground2);
     Mesh ramMesh;
     ramMesh.loadOFF ("models/ram.off");
-    Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f));
+    Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f), 0.0f, 0.0f, 0.0f, 1.2f, 0.8f);
     Object ram (ramMesh, ramMat);
     ram.setTrans (Vec3Df (1.f, 0.5f, 0.f));
     objects.push_back (ram);

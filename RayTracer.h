@@ -77,6 +77,7 @@ private:
 	ShadowsMode shadowsMode;
 	AmbientOcclusionMode ambientOcclusionMode;
 	MirrorsMode mirrorsMode;
+	bool transparencyMode;
 	unsigned int aaGrid;
 	unsigned int raysAO;
 	float percentageAO;
