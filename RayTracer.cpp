@@ -10,6 +10,7 @@
 #include "Ray.h"
 #include "Scene.h"
 #include "KDTree.h"
+#include "Direction.h"
 #include <QProgressDialog>
 
 #define INFINITE_DISTANCE	1000000.0f		
@@ -37,7 +38,7 @@ inline int clamp (float f, int inf, int sup)
 	return (v < inf ? inf : (v > sup ? sup : v));
 }
 
-Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations) {
+Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, bool alreadyDiffused) {
 	bool hasIntersection = false;
 	Vertex intersection;
 	unsigned int leafId;
@@ -60,93 +61,62 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 			intersectedLeafId = leafId;
 		}
 	}
-	// search now for an intersection with a light
+
+	Vec3Df c(0.f, 0.f, 0.f);
+	if (!alreadyDiffused && !hasIntersection)
+		return c;
+
+	// search now for an intersection with one or several lights
 	vector<AreaLight>& sceneLights = scene->getAreaLights();
-	bool intersectionIsLight = false;
-	unsigned int intersectedLight;
+	Ray ray0(origin, dir);
 	for (unsigned int i = 0 ; i < sceneLights.size() ; i++) {
 		const AreaLight& l = sceneLights[i];
-		Ray ray(origin, dir);
-		// tests if the ray intersects the light and if the distance from the origin is the lowest so far
-		if (l.intersects(ray, smallestIntersectionDistance)) {
-			hasIntersection = true;	
-			intersectionIsLight = true;
-			intersectedLight = i;
-		}
+		// tests if the ray intersects the light and if the distance from the origin is lower than for the nearest object
+		if (l.intersects(ray0, smallestIntersectionDistance))
+			c += l.getIntensity() * l.getColor();
 	}
 
-	if (!hasIntersection) // the ray doesn't intersect an object nor a light
-		return Vec3Df(0.f, 0.f, 0.f);
+	if (!hasIntersection) // the ray doesn't intersect an object
+		return c;
 
-	if (intersectionIsLight) // the intersected point is on a light
-		return sceneLights[intersectedLight].getIntensity() * sceneLights[intersectedLight].getColor();
-
-	// Otherwise, the intersected point is on an object
-
-	if (mirrorsMode == MEnabled) {
-		unsigned int nbReflexion = 0;
-		while (scene->getObjects()[intersectedObject].getMaterial().isMirror() && nbReflexion < NB_MAX_REFLEXION) {
-			const Object& auxO = scene->getObjects()[intersectedObject];
-			float distReflexion = INFINITE_DISTANCE;
-			Vertex intersectionReflexion;
-			Vertex intersectionReflexionTemp = intersectedVertex;
-			unsigned int leafIdReflexion;
-			Vec3Df reflectionDir = 2 * Vec3Df::dotProduct(intersectedVertex.getNormal(), -dir) * intersectedVertex.getNormal() + dir;
-			float glossiness = auxO.getMaterial().getGlossiness();
-			if (glossiness > 0.f) {
-				Vec3Df base1(0, -reflectionDir[2], reflectionDir[1]);
-				Vec3Df base2 = Vec3Df::crossProduct(reflectionDir, base1);
-				// computes a random direction for the ray
-				float rdm = (float) rand() / ((float) RAND_MAX);
-				float rdm2 = (float) rand() / ((float) RAND_MAX);
-				Vec3Df tmp (1.f, M_PI * rdm * (glossiness / 180.f) / 2.f, rdm2 * 2 * M_PI);
-				Vec3Df aux = Vec3Df::polarToCartesian(tmp);
-				// places the direction in the hemisphere supported by the normal of the point
-				reflectionDir[0] = base1[0] * aux[0] + base2[0] * aux[1] + reflectionDir[0] * aux[2];
-				reflectionDir[1] = base1[1] * aux[0] + base2[1] * aux[1] + reflectionDir[1] * aux[2];
-				reflectionDir[2] = base1[2] * aux[0] + base2[2] * aux[1] + reflectionDir[2] * aux[2];
-			}
-			for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
-				const Object& ob = scene->getObjects()[n];
-				Ray reflexionRay(intersectedVertex.getPos() + auxO.getTrans() - ob.getTrans(), reflectionDir);
-				if (ob.intersectsRay(reflexionRay, intersectionReflexion, distReflexion, leafIdReflexion)) {
-					dir = - (intersectedVertex.getPos() + auxO.getTrans() - (intersectionReflexion.getPos() + ob.getTrans()));
-					intersectedObject = n;
-					intersectionReflexionTemp = intersectionReflexion;
-				}
-			}
-			intersectedVertex = intersectionReflexionTemp;
-			dir.normalize();
-			nbReflexion++;
-		}
-	}
-
-	// at least we have the right point	
+	// we have a true intersected point	
 	const Object& o = scene->getObjects()[intersectedObject];
 	const Material& material = o.getMaterial();
 	const Vec3Df& intersectedPoint = intersectedVertex.getPos() + o.getTrans();
 	Vec3Df normal = intersectedVertex.getNormal();
 	normal.normalize();
+	bool isDiffusing = alreadyDiffused || mirrorsMode == MDisabled || (mirrorsMode == MEnabled && !material.isMirror());
 
-	Vec3Df c(0.f, 0.f, 0.f);
 	// path-tracing : recursive ray-tracing
-	if (iterations > 0) {
-		Vec3Df base1(0, -normal[2], normal[1]);
-		Vec3Df base2 = Vec3Df::crossProduct(normal, base1);
+	if (iterations < iterationsPT) {
+		Vec3Df base1, base2;
+		Direction::computeBase(normal, base1, base2);
 		Vec3Df rayDirection;
-		for (unsigned int i = 0 ; i < raysPT ; i++) {
-			// computes a random direction for the ray
-			float rdm = (float) rand() / ((float) RAND_MAX);
-			float rdm2 = (float) rand() / ((float) RAND_MAX);
-			Vec3Df tmp (1.f, M_PI * rdm * (180.f / 180.f) / 2.f, rdm2 * 2 * M_PI);
-			Vec3Df aux = Vec3Df::polarToCartesian(tmp);
-			// places the direction in the hemisphere supported by the normal of the point
-			rayDirection[0] = base1[0] * aux[0] + base2[0] * aux[1] + normal[0] * aux[2];
-			rayDirection[1] = base1[1] * aux[0] + base2[1] * aux[1] + normal[1] * aux[2];
-			rayDirection[2] = base1[2] * aux[0] + base2[2] * aux[1] + normal[2] * aux[2];
-			rayDirection.normalize();
-
-			c += (1.f / (raysPT)) * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations - 1), -dir);
+		unsigned int shadowRays = nbPointsDisc;
+		if (mirrorsMode == MEnabled && material.isMirror()) {
+			Vec3Df reflectionDir = 2 * Vec3Df::dotProduct(normal, -dir) * normal + dir;
+			float glossiness = material.getGlossiness();
+			if (glossiness > 0.f)
+				reflectionDir = Direction::random(reflectionDir, glossiness);
+			c += 0.5 * pathTrace(intersectedPoint, reflectionDir, iterations + 1, isDiffusing);
+		}
+		else {
+			for (unsigned int i = 0 ; i < raysPT ; i++) {
+				// computes a random direction for the ray
+				rayDirection = Direction::random(normal, base1, base2, 180.f);	
+				//c += 0.5f * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations - 1, isDiffusing), -dir);
+				c += material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations + 1, isDiffusing), -dir);
+				//c += (1.f / (raysPT + shadowRays)) * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations - 1, isDiffusing), -dir);
+			}
+			// shadow rays
+			/*for (unsigned int i = 0 ; i < shadowRays ; i++) {
+				int rdm = rand() % sceneLights.size();
+				Vec3Df directionToLight = sceneLights[rdm].randomPoint() - intersectedPoint;
+				directionToLight.normalize();
+				c += 0.5f * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations - 1, isDiffusing), -dir);
+				//c += (1.f / (raysPT + shadowRays)) * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations - 1, isDiffusing), -dir);
+					
+			}*/
 		}
 	}
 	return c;
@@ -346,19 +316,6 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir) {
 	return c;	
 }
 
-Vec3Df RayTracer::computeColor(const Material& material, Vec3Df& normal, Vec3Df directionIn, Vec3Df colorIn, Vec3Df directionOut) {
-	float diff = Vec3Df::dotProduct(normal, -directionIn);
-	Vec3Df r = 2 * diff * normal + directionIn;
-	if (diff <= EPSILON)
-		diff = 0.f;
-	r.normalize();
-	float spec = Vec3Df::dotProduct(r, directionOut); 
-	if (spec <= EPSILON)
-		spec = 0.f;
-	return (material.getDiffuse() * diff + material.getSpecular() * spec) * colorIn * material.getColor();
-}
-
-
 QImage RayTracer::render(const Vec3Df& camPos,
 		const Vec3Df& direction,
 		const Vec3Df& upVector,
@@ -369,6 +326,10 @@ QImage RayTracer::render(const Vec3Df& camPos,
 		unsigned int screenHeight) {
 	QImage image (QSize (screenWidth, screenHeight), QImage::Format_RGB888);
 
+	/*Vec3Df** imageTemp = new Vec3Df*[screenWidth];
+	for (unsigned int i = 0; i < screenWidth; i++)
+		imageTemp[i] = new Vec3Df[screenHeight];
+	//float max = 0.f;*/
 	QProgressDialog progressDialog ("Raytracing...", "Cancel", 0, 100);
 	progressDialog.show ();
 	unsigned int raysPerPixel = antialiasingMode == Uniform ? aaGrid : 1;
@@ -393,13 +354,30 @@ QImage RayTracer::render(const Vec3Df& camPos,
 					if (ptMode == PTDisabled)
 						c += rayTrace(camPos, dir);
 					else
-						c += pathTrace(camPos, dir, iterationsPT);
+						c += pathTrace(camPos, dir, 0, false);
 				}
 			}
 			c *= 255.0f / (raysPerPixel * raysPerPixel);
 			image.setPixel(i, j, qRgb(clamp(c[0], 0, 255), clamp(c[1], 0, 255), clamp(c[2], 0, 255)));
+			//imageTemp[i][j] = c;
+			/*if (c[0] > max)
+				max = c[0];
+			if (c[1] > max)
+				max = c[1];
+			if (c[3] > max)
+				max = c[3];*/
 		}
 	}
+	/*for (unsigned int i = 0; i < screenWidth; i++) {
+		for (unsigned int j = 0; j < screenHeight; j++) {
+			//Vec3Df c = imageTemp[i][j] / max * 255.0f;
+			image.setPixel(i, j, qRgb(clamp(c[0], 0, 255), clamp(c[1], 0, 255), clamp(c[2], 0, 255)));
+		}
+	}
+	for (unsigned int i = 0; i < screenWidth; i++)
+		delete [] imageTemp[i];
+	delete [] imageTemp;*/
+
 	progressDialog.setValue (100);
 	return image;
 }

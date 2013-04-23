@@ -19,6 +19,7 @@ HEADERS = Window.h \
     	  Vec3D.h \
           KDTree.h \
           KDTree2.h \
+	Direction.h \
 	  Node.h
 
 SOURCES = Window.cpp \
@@ -38,6 +39,7 @@ SOURCES = Window.cpp \
           Main.cpp \
           KDTree.cpp \
           KDTree2.cpp \
+	Direction.cpp \
 	  Node.cpp
 
     DESTDIR=.

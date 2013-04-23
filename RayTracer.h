@@ -44,9 +44,7 @@ public:
 	
 	
 	Vec3Df rayTrace(const Vec3Df& origin, Vec3Df& dir);
-	Vec3Df pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations); 
-	Vec3Df computeColor(const Material& material, Vec3Df& normal, Vec3Df directionIn, Vec3Df colorIn, Vec3Df directionOut);
-
+	Vec3Df pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, bool alreadyDiffused); 
     
 	QImage render (const Vec3Df & camPos,
 		const Vec3Df & viewDirection,

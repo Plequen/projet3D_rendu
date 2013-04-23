@@ -55,7 +55,7 @@ Vec3Df animation2(Vec3Df& initial, unsigned int t) {
 void Scene::buildDefaultScene () {
     Mesh groundMesh;
     groundMesh.loadOFF ("models/ground.off");
-	Material groundMat(0.8f, 0.2f, Vec3Df(0.5f, 0.5f, 0.5f));
+	Material groundMat(0.8f, 0.2f, Vec3Df(1.f, 1.f, 1.f));
     Material groundMat2(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.5f), true, 0.f);
 
 	Mesh groundMesh2;
@@ -79,7 +79,7 @@ void Scene::buildDefaultScene () {
     ramMesh.loadOFF ("models/ram.off");
     Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f));
     Object ram (ramMesh, ramMat);
-    ram.setTrans (Vec3Df (1.f, 0.5f, 0.f));
+    ram.setTrans (Vec3Df (0.f, 0.0f, 0.f));
 	ram.setAnimationFunction(animation1);
     objects.push_back (ram);
 
@@ -100,6 +100,9 @@ void Scene::buildDefaultScene () {
     Light l (Vec3Df (3.0f, 3.0f, 3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f);
     lights.push_back (l);
 
-    AreaLight al (Vec3Df (3.0f, 3.0f, 3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f, 10.0f, Vec3Df(-1.0f,-1.0f,-1.0f));
+    AreaLight al (Vec3Df (4.0f, -2.0f, 5.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.f, Vec3Df(-4.0f,2.0f,-3.0f));
     areaLights.push_back (al);
+
+	AreaLight sun(Vec3Df(4.f, 2.f, 3.f), Vec3Df(1.f, 1.f, 1.f), 0.5f, 2.f, Vec3Df(-4.f, 2.f, -3.f));
+	areaLights.push_back(sun);
 }
