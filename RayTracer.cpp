@@ -14,7 +14,7 @@
 
 #define INFINITE_DISTANCE	1000000.0f		
 #define EPSILON	0.00001f
-#define NB_MAX_REFLEXION 10
+#define NB_MAX_REFLEXION 1
 
 static RayTracer * instance = NULL;
 
@@ -80,8 +80,48 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 
 	if (intersectionIsLight) // the intersected point is on a light
 		return sceneLights[intersectedLight].getIntensity() * sceneLights[intersectedLight].getColor();
-	
+
 	// Otherwise, the intersected point is on an object
+
+	if (mirrorsMode == MEnabled) {
+		unsigned int nbReflexion = 0;
+		while (scene->getObjects()[intersectedObject].getMaterial().isMirror() && nbReflexion < NB_MAX_REFLEXION) {
+			const Object& auxO = scene->getObjects()[intersectedObject];
+			float distReflexion = INFINITE_DISTANCE;
+			Vertex intersectionReflexion;
+			Vertex intersectionReflexionTemp = intersectedVertex;
+			unsigned int leafIdReflexion;
+			Vec3Df reflectionDir = 2 * Vec3Df::dotProduct(intersectedVertex.getNormal(), -dir) * intersectedVertex.getNormal() + dir;
+			float glossiness = auxO.getMaterial().getGlossiness();
+			if (glossiness > 0.f) {
+				Vec3Df base1(0, -reflectionDir[2], reflectionDir[1]);
+				Vec3Df base2 = Vec3Df::crossProduct(reflectionDir, base1);
+				// computes a random direction for the ray
+				float rdm = (float) rand() / ((float) RAND_MAX);
+				float rdm2 = (float) rand() / ((float) RAND_MAX);
+				Vec3Df tmp (1.f, M_PI * rdm * (glossiness / 180.f) / 2.f, rdm2 * 2 * M_PI);
+				Vec3Df aux = Vec3Df::polarToCartesian(tmp);
+				// places the direction in the hemisphere supported by the normal of the point
+				reflectionDir[0] = base1[0] * aux[0] + base2[0] * aux[1] + reflectionDir[0] * aux[2];
+				reflectionDir[1] = base1[1] * aux[0] + base2[1] * aux[1] + reflectionDir[1] * aux[2];
+				reflectionDir[2] = base1[2] * aux[0] + base2[2] * aux[1] + reflectionDir[2] * aux[2];
+			}
+			for (unsigned int n = 0 ; n < scene->getObjects().size() ; n++) {
+				const Object& ob = scene->getObjects()[n];
+				Ray reflexionRay(intersectedVertex.getPos() + auxO.getTrans() - ob.getTrans(), reflectionDir);
+				if (ob.intersectsRay(reflexionRay, intersectionReflexion, distReflexion, leafIdReflexion)) {
+					dir = - (intersectedVertex.getPos() + auxO.getTrans() - (intersectionReflexion.getPos() + ob.getTrans()));
+					intersectedObject = n;
+					intersectionReflexionTemp = intersectionReflexion;
+				}
+			}
+			intersectedVertex = intersectionReflexionTemp;
+			dir.normalize();
+			nbReflexion++;
+		}
+	}
+
+	// at least we have the right point	
 	const Object& o = scene->getObjects()[intersectedObject];
 	const Material& material = o.getMaterial();
 	const Vec3Df& intersectedPoint = intersectedVertex.getPos() + o.getTrans();

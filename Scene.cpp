@@ -55,12 +55,26 @@ Vec3Df animation2(Vec3Df& initial, unsigned int t) {
 void Scene::buildDefaultScene () {
     Mesh groundMesh;
     groundMesh.loadOFF ("models/ground.off");
-    Material groundMat(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.5f), true);
+	Material groundMat(0.8f, 0.2f, Vec3Df(0.5f, 0.5f, 0.5f));
+    Material groundMat2(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.5f), true, 0.f);
+
+	Mesh groundMesh2;
+	groundMesh2.loadOFF("models/ground2.off");
+	Mesh groundMesh3;
+	groundMesh3.loadOFF("models/ground3.off");
+
     Object ground (groundMesh, groundMat);    
-    Object ground2 (groundMesh, groundMat);    
-    ground2.setTrans (Vec3Df (0.f, 0.0f, 6.f));
+    Object ground2 (groundMesh2, groundMat2);    
+    ground2.setTrans (Vec3Df (0.f, 1.95f, 1.95f));
+
+    Object ground3 (groundMesh3, groundMat2);    
+    ground3.setTrans (Vec3Df (-1.95f, 0.0f, 1.95f));
+
     objects.push_back (ground);
     objects.push_back (ground2);
+    objects.push_back (ground3);
+
+
     Mesh ramMesh;
     ramMesh.loadOFF ("models/ram.off");
     Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f));
