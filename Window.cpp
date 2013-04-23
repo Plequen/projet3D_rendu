@@ -87,7 +87,7 @@ void Window::renderRayImage () {
     QTime timer;
     timer.start ();
 	
-	int imagesNumber = 5;
+	int imagesNumber = 1;
 	
 	QImage image[imagesNumber];
 
@@ -103,7 +103,7 @@ void Window::renderRayImage () {
 	}
 
 	QImage computedImage = image[0];
-	QRgb* rgb;
+	/*QRgb* rgb;
 	QRgb* rgb2;
 	for (int y = 0; y < image[0].height(); y++) {
 		rgb2 = (QRgb*)computedImage.scanLine(y); // Il faut que l'image soit en ARGB32 (je pense, voir la doc)
@@ -125,7 +125,7 @@ void Window::renderRayImage () {
 			valueA /= imagesNumber;
 			rgb2[x] = qRgba(valueR, valueG, valueB, valueA);	
 		}
-	}
+	}*/
 
 	viewer->setRayImage(computedImage);
 
@@ -191,13 +191,22 @@ void Window::setMirrorsMode(int m) {
 
 void Window::setRaysPT(int r) {
 	RayTracer::getInstance()->setRaysPT(r);
+	RayTracer::getInstance()->setPTMode(static_cast<int>(RayTracer::PTEnabled));
+	ptEnabledButton->setChecked(true);
 	raysPTLabel->setText(QString::number(r));
 }
 
 void Window::setIterationsPT(int i) {
 	RayTracer::getInstance()->setIterationsPT(i);
+	RayTracer::getInstance()->setPTMode(static_cast<int>(RayTracer::PTEnabled));
+	ptEnabledButton->setChecked(true);
 	iterPTLabel->setText(QString::number(i));
 }
+
+void Window::setPTMode(int m) {
+	RayTracer::getInstance()->setPTMode(m);
+}
+
 
 void Window::setBGColor () {
     QColor c = QColorDialog::getColor (QColor (133, 152, 181), this);
@@ -372,6 +381,14 @@ void Window::initControlWidget2() {
 
 	// path-tracing settings
 	QLabel* ptLabel = new QLabel("Path tracing", rayGroupBox);
+	QButtonGroup* ptButtonGroup = new QButtonGroup(rayGroupBox);
+	QRadioButton* ptDisabledButton = new QRadioButton("Disabled", rayGroupBox);
+	ptEnabledButton = new QRadioButton("Enabled", rayGroupBox);
+	ptButtonGroup->addButton(ptDisabledButton, static_cast<int>(RayTracer::PTDisabled)); 
+	ptButtonGroup->addButton(ptEnabledButton, static_cast<int>(RayTracer::PTEnabled)); 
+	ptDisabledButton->setChecked(true);
+	connect(ptButtonGroup, SIGNAL(buttonClicked(int)), this, SLOT(setPTMode(int)));
+
 	QHBoxLayout* raysPTLayout = new QHBoxLayout();
 	QLabel* raysPTLabel0 = new QLabel("Rays ", rayGroupBox);
 	QSlider* raysPTSlider = new QSlider(Qt::Horizontal, rayGroupBox);
@@ -386,15 +403,17 @@ void Window::initControlWidget2() {
 	QHBoxLayout* iterPTLayout = new QHBoxLayout();
 	QLabel* iterPTLabel0 = new QLabel("Iterations ", rayGroupBox);
 	QSlider* iterPTSlider = new QSlider(Qt::Horizontal, rayGroupBox);
-	iterPTSlider->setRange(1, 10);
-	iterPTSlider->setValue(1);
-	iterPTLabel = new QLabel("1", rayGroupBox);
+	iterPTSlider->setRange(0, 10);
+	iterPTSlider->setValue(0);
+	iterPTLabel = new QLabel("0", rayGroupBox);
 	connect(iterPTSlider, SIGNAL(valueChanged(int)), this, SLOT(setIterationsPT(int)));
 	iterPTLayout->addWidget(iterPTLabel0);
 	iterPTLayout->addWidget(iterPTSlider);
 	iterPTLayout->addWidget(iterPTLabel);
 
 	rayLayout->addWidget(ptLabel);
+	rayLayout->addWidget(ptDisabledButton);
+	rayLayout->addWidget(ptEnabledButton);
 	rayLayout->addLayout(raysPTLayout);
 	rayLayout->addLayout(iterPTLayout);
 
