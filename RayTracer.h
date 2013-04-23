@@ -14,6 +14,7 @@
 #include <QImage>
 
 #include "Vec3D.h"
+#include "Material.h"
 
 class Vertex;
 class Object;
@@ -28,6 +29,7 @@ public:
 	typedef enum {NoShadows = 0, Hard = 1, Soft = 2} ShadowsMode;
 	typedef enum {AODisabled = 0, AOEnabled = 1, AOOnly = 2} AmbientOcclusionMode;
 	typedef enum {MDisabled = 0, MEnabled = 1} MirrorsMode;
+	typedef enum {PTDisabled = 0, PTEnabled = 1} PTMode;
 
 	inline const Vec3Df & getBackgroundColor () const { return backgroundColor;}
 	inline void setBackgroundColor (const Vec3Df & c) { backgroundColor = c; }
@@ -44,19 +46,22 @@ public:
 	void setNbMaxReflexion(int m) { nbMaxReflexion = m; } 
 	void setRaysPT(int r) { raysPT = r; } 
 	void setIterationsPT(int i) { iterationsPT = i; } 
+	void setPTMode(int m) { ptMode = static_cast<PTMode>(m); }
 	
-	void rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, unsigned& nbReflexion,
+	void rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned& nbReflexion,
 				  std::vector<unsigned>& objectsIntersected,
 				  std::vector<Vertex>& verticesIntersected,
 				  std::vector<Vec3Df>& directionsIntersected);
-	Vec3Df rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int interations);
+	Vec3Df rayTrace(const Vec3Df& origin, Vec3Df& dir);
 
-	Vec3Df computeColor(const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, unsigned iterations, float& visibility, float& occlusionRate);
+	Vec3Df computeColor(const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, float& visibility, float& occlusionRate);
 	Vec3Df computeFinalColor(const std::vector<unsigned>& objectsIntersected,
 				    const std::vector<float>& visibilitiesIntersected,
 				    const std::vector<float>& occlusionRatesIntersected,
 				    const std::vector<Vec3Df>& colorsIntersected);
 
+	
+	Vec3Df pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, bool alreadyDiffused); 
     
 	QImage render (const Vec3Df & camPos,
 		const Vec3Df & viewDirection,
@@ -68,7 +73,7 @@ public:
 		unsigned int screenHeight);
     
 protected:
-	inline RayTracer() : antialiasingMode(None), shadowsMode(NoShadows), ambientOcclusionMode(AODisabled), mirrorsMode(MDisabled), aaGrid(1), raysAO(10), percentageAO(0.05f), coneAO(180.f), intensityAO(1.f), nbPointsDisc(50), raysPT(10), iterationsPT(1) {}
+	inline RayTracer() : antialiasingMode(None), shadowsMode(NoShadows), ambientOcclusionMode(AODisabled), mirrorsMode(MDisabled), ptMode(PTDisabled), aaGrid(1), raysAO(10), percentageAO(0.05f), coneAO(180.f), intensityAO(1.f), nbPointsDisc(50), raysPT(10), iterationsPT(0) {}
 	inline virtual ~RayTracer () {}
     
 private:
@@ -78,6 +83,7 @@ private:
 	AmbientOcclusionMode ambientOcclusionMode;
 	MirrorsMode mirrorsMode;
 	bool transparencyMode;
+	PTMode ptMode;
 	unsigned int aaGrid;
 	unsigned int raysAO;
 	float percentageAO;

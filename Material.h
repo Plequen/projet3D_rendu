@@ -24,6 +24,7 @@ public:
         : diffuse (diffuse), specular (specular), color (color), glossiness(0.0f), reflectivity(0.0f), mirrorColorBlendingFactor(0.0f), refraction(1.0f), transparency(0.0f) {}
     virtual ~Material () {}
 
+    Vec3Df computeColor(Vec3Df& normal, Vec3Df directionIn, Vec3Df colorIn, Vec3Df directionOut) const;
     inline float getDiffuse () const { return diffuse; }
     inline float getSpecular () const { return specular; }
     inline Vec3Df getColor () const { return color; }
@@ -46,6 +47,10 @@ private:
     float mirrorColorBlendingFactor;
     float refraction;
     float transparency;
+
+	// path tracing
+	float reflexion;
+	float transmission;
 };
 
 

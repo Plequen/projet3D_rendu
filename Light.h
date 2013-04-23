@@ -15,24 +15,23 @@
 
 class Light {
 public:
-    inline Light () : color (Vec3Df (1.0f, 1.0f, 1.0f)), intensity (1.0f) {}
-    inline Light (const Vec3Df & pos, const Vec3Df & color, float intensity)
-        : pos (pos), color (color), intensity (intensity) {}
-    virtual ~Light () {}
+	inline Light () : color (Vec3Df (1.0f, 1.0f, 1.0f)), intensity (1.0f) {}
+	inline Light (const Vec3Df & pos, const Vec3Df & color, float intensity) : pos (pos), color (color), intensity (intensity) {}
+	virtual ~Light () {}
 
-    inline const Vec3Df & getPos () const { return pos; }
-    inline const Vec3Df & getColor () const { return color; }
-    inline float getIntensity () const { return intensity; }
+	inline const Vec3Df & getPos () const { return pos; }
+	inline const Vec3Df & getColor () const { return color; }
+	inline float getIntensity () const { return intensity; }
 
-    inline void setPos (const Vec3Df & p) { pos = p; }
-    inline void setColor (const Vec3Df & c) { color = c; }
-    inline void setIntensity (float i) { intensity = i; }
+	inline void setPos (const Vec3Df & p) { pos = p; }
+	inline void setColor (const Vec3Df & c) { color = c; }
+	inline void setIntensity (float i) { intensity = i; }
 
     
 protected:
-    Vec3Df pos;
-    Vec3Df color;
-    float intensity;
+	Vec3Df pos;
+	Vec3Df color;
+	float intensity;
 };
 
 

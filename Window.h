@@ -49,6 +49,7 @@ public slots :
 	void setNbMaxReflexion(int m);
 	void setRaysPT(int r);
 	void setIterationsPT(int i);
+	void setPTMode(int m);
     
 private :
 	void initControlWidget ();
@@ -70,6 +71,10 @@ private :
 	QRadioButton* softShadowsButton; 
 	QLabel* raysPTLabel;
 	QLabel* iterPTLabel;
+	QRadioButton* ptEnabledButton;
+
+	QImage* image;
+	QImage computedImage;
 };
 
 #endif // WINDOW_H

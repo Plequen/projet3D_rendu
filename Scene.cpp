@@ -43,22 +43,49 @@ void Scene::updateBoundingBox () {
     }
 }
 
+Vec3Df animation1(Vec3Df& initial, unsigned int t) {
+	return initial + t * Vec3Df(0.f, 0.02f, 0.f);
+}
+
+Vec3Df animation2(Vec3Df& initial, unsigned int t) {
+	return initial + t * Vec3Df(-0.02f, 0.f, 0.f);
+}
+
 // Changer ce code pour creer des scenes originales
 void Scene::buildDefaultScene () {
     Mesh groundMesh;
     groundMesh.loadOFF ("models/ground.off");
     Material groundMat(0.8f, 0.2f, Vec3Df(0.0f,0.5f,0.5f), 0.0f, 0.5f, 0.2f, 1.0f, 0.0f);
-    Material groundMat2(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.0f), 0.0f, 0.5f, 0.1f, 1.0f, 0.0f);
+    //Material groundMat2(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.0f), 0.0f, 0.5f, 0.1f, 1.0f, 0.0f);
+  //  Object ground (groundMesh, groundMat);    
+    //Object ground2 (groundMesh, groundMat2);    
+    //ground2.setTrans (Vec3Df (0.f, 0.0f, 6.f));
+//	Material groundMat(0.8f, 0.2f, Vec3Df(1.f, 1.f, 1.f));
+    //Material groundMat2(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.5f), true, 0.f);
+/*
+	Mesh groundMesh2;
+	groundMesh2.loadOFF("models/ground2.off");
+	Mesh groundMesh3;
+	groundMesh3.loadOFF("models/ground3.off");
+*/
     Object ground (groundMesh, groundMat);    
-    Object ground2 (groundMesh, groundMat2);    
-    ground2.setTrans (Vec3Df (0.f, 0.0f, 6.f));
+  //  Object ground2 (groundMesh2, groundMat2);    
+   // ground2.setTrans (Vec3Df (0.f, 1.95f, 1.95f));
+
+    //Object ground3 (groundMesh3, groundMat2);    
+    //ground3.setTrans (Vec3Df (-1.95f, 0.0f, 1.95f));
+
     objects.push_back (ground);
-    objects.push_back (ground2);
+    //objects.push_back (ground2);
+    //objects.push_back (ground3);
+
+
     Mesh ramMesh;
     ramMesh.loadOFF ("models/ram.off");
     Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f), 0.0f, 0.0f, 0.0f, 1.2f, 0.8f);
     Object ram (ramMesh, ramMat);
-    ram.setTrans (Vec3Df (1.f, 0.5f, 0.f));
+    ram.setTrans (Vec3Df (0.f, 0.0f, 0.f));
+	ram.setAnimationFunction(animation1);
     objects.push_back (ram);
 
     Mesh rhinoMesh;
@@ -66,6 +93,7 @@ void Scene::buildDefaultScene () {
     Material rhinoMat (1.0f, 0.2f, Vec3Df (0.6f, 0.6f, 0.7f));
     Object rhino (rhinoMesh, rhinoMat);
     rhino.setTrans (Vec3Df (-1.f, -1.0f, 0.4f));
+	rhino.setAnimationFunction(animation2);
     objects.push_back (rhino);
     Mesh gargMesh;
     gargMesh.loadOFF ("models/gargoyle.off");
@@ -77,6 +105,9 @@ void Scene::buildDefaultScene () {
     Light l (Vec3Df (3.0f, 3.0f, 3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f);
     lights.push_back (l);
 
-    AreaLight al (Vec3Df (3.0f, 3.0f, 3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f, 1.0f, Vec3Df(-1.0f,-1.0f,-1.0f));
+    AreaLight al (Vec3Df (4.0f, -2.0f, 5.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.f, Vec3Df(-4.0f,2.0f,-3.0f));
     areaLights.push_back (al);
+
+	AreaLight sun(Vec3Df(4.f, 2.f, 3.f), Vec3Df(1.f, 1.f, 1.f), 0.5f, 2.f, Vec3Df(-4.f, 2.f, -3.f));
+	areaLights.push_back(sun);
 }

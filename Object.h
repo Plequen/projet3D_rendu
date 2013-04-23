@@ -21,36 +21,43 @@
 
 class Object {
 public:
-    inline Object () {}
+	inline Object () {}
 	Object (const Mesh & mesh, const Material & mat);
-    virtual ~Object () {}
+	virtual ~Object () {}
 
-    inline const Vec3Df & getTrans () const { return trans;}
-    inline void setTrans (const Vec3Df & t) { trans = t; }
+	inline const Vec3Df & getTrans () const { return trans;}
+	inline void setTrans (const Vec3Df & t) { trans = t; initialTrans = t; }
 
-    inline const Mesh & getMesh () const { return mesh; }
-    inline Mesh & getMesh () { return mesh; }
-    
-    inline const KDTree & getKDTree () const { return kdtree; }
-    inline KDTree & getKDTree () { return kdtree; }
-    inline const KDTree2& getKDTree2 () const { return kdTree2; }
-    inline KDTree2& getKDTree2 () { return kdTree2; }
+	inline const Mesh & getMesh () const { return mesh; }
+	inline Mesh & getMesh () { return mesh; }
 
-    inline const Material & getMaterial () const { return mat; }
-    inline Material & getMaterial () { return mat; }
+	inline const KDTree & getKDTree () const { return kdtree; }
+	inline KDTree & getKDTree () { return kdtree; }
+	inline const KDTree2& getKDTree2 () const { return kdTree2; }
+	inline KDTree2& getKDTree2 () { return kdTree2; }
 
-    inline const BoundingBox & getBoundingBox () const { return bbox; }
-    void updateBoundingBox ();
+	inline const Material & getMaterial () const { return mat; }
+	inline Material & getMaterial () { return mat; }
+
+	inline const BoundingBox & getBoundingBox () const { return bbox; }
+	void updateBoundingBox ();
+
+	void buildKDTree();
+
+	void animate(unsigned int t);	
+	void setAnimationFunction(Vec3Df (*function)(Vec3Df&, unsigned int));
 
 	bool intersectsRay(Ray& ray, Vertex& intersectionPoint, float& t, unsigned int& leafId) const;
     
 private:
-    Mesh mesh;
-    KDTree kdtree;
+	Mesh mesh;
+	KDTree kdtree;
 	KDTree2 kdTree2;
-    Material mat;
-    BoundingBox bbox;
-    Vec3Df trans;
+	Material mat;
+	BoundingBox bbox;
+	Vec3Df trans;
+	Vec3Df initialTrans;
+	Vec3Df (*animationFunction)(Vec3Df&, unsigned int);
 };
 
 

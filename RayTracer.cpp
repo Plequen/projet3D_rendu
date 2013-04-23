@@ -11,11 +11,12 @@
 #include "Ray.h"
 #include "Scene.h"
 #include "KDTree.h"
+#include "Direction.h"
 #include <QProgressDialog>
 
 #define INFINITE_DISTANCE	1000000.0f		
 #define EPSILON	0.00001f
-#define NB_MAX_REFLEXION 10
+#define NB_MAX_REFLEXION 1
 
 static RayTracer * instance = NULL;
 
@@ -40,11 +41,92 @@ inline int clamp (float f, int inf, int sup)
 	return (v < inf ? inf : (v > sup ? sup : v));
 }
 
-Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations) {
 
-	if (iterations == 0)
-		return Vec3Df(0, 0, 0);
+Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, bool alreadyDiffused) {
+	bool hasIntersection = false;
+	Vertex intersection;
+	unsigned int leafId;
+	unsigned int intersectedObject;
+	Vertex intersectedVertex;
+	unsigned int intersectedLeafId;
+	Scene* scene = Scene::getInstance();
 
+	// search the nearest intersection point between the ray and the scene
+	vector<Object>& sceneObjects = scene->getObjects();
+	float smallestIntersectionDistance = INFINITE_DISTANCE;
+	for (unsigned int i = 0 ; i < sceneObjects.size() ; i++) {
+		const Object& o = sceneObjects[i];
+		Ray ray(origin - o.getTrans(), dir);
+		// tests if the ray intersects the object and if the distance from the origin is the lowest so far
+		if (o.intersectsRay(ray, intersection, smallestIntersectionDistance, leafId)) {
+			hasIntersection = true;	
+			intersectedVertex = intersection;
+			intersectedObject = i;
+			intersectedLeafId = leafId;
+		}
+	}
+
+	Vec3Df c(0.f, 0.f, 0.f);
+	if (!alreadyDiffused && !hasIntersection)
+		return c;
+
+	// search now for an intersection with one or several lights
+	vector<AreaLight>& sceneLights = scene->getAreaLights();
+	Ray ray0(origin, dir);
+	for (unsigned int i = 0 ; i < sceneLights.size() ; i++) {
+		const AreaLight& l = sceneLights[i];
+		// tests if the ray intersects the light and if the distance from the origin is lower than for the nearest object
+		if (l.intersects(ray0, smallestIntersectionDistance))
+			c += l.getIntensity() * l.getColor();
+	}
+
+	if (!hasIntersection) // the ray doesn't intersect an object
+		return c;
+
+	// we have a true intersected point	
+	const Object& o = scene->getObjects()[intersectedObject];
+	const Material& material = o.getMaterial();
+	const Vec3Df& intersectedPoint = intersectedVertex.getPos() + o.getTrans();
+	Vec3Df normal = intersectedVertex.getNormal();
+	normal.normalize();
+	bool isDiffusing = alreadyDiffused || mirrorsMode == MDisabled || (mirrorsMode == MEnabled && !(material.getReflectivity()>0.001f));
+
+	// path-tracing : recursive ray-tracing
+	if (iterations < iterationsPT) {
+		Vec3Df base1, base2;
+		Direction::computeBase(normal, base1, base2);
+		Vec3Df rayDirection;
+		unsigned int shadowRays = nbPointsDisc;
+		if (mirrorsMode == MEnabled && material.getReflectivity()>0.001f) {
+			Vec3Df reflectionDir = 2 * Vec3Df::dotProduct(normal, -dir) * normal + dir;
+			float glossiness = material.getGlossiness();
+			if (glossiness > 0.f)
+				reflectionDir = Direction::random(reflectionDir, glossiness);
+			c += 0.5 * pathTrace(intersectedPoint, reflectionDir, iterations + 1, isDiffusing);
+		}
+		else {
+			for (unsigned int i = 0 ; i < raysPT ; i++) {
+				// computes a random direction for the ray
+				rayDirection = Direction::random(normal, base1, base2, 180.f);	
+				//c += 0.5f * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations - 1, isDiffusing), -dir);
+				c += material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations + 1, isDiffusing), -dir);
+				//c += (1.f / (raysPT + shadowRays)) * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations - 1, isDiffusing), -dir);
+			}
+			// shadow rays
+			/*for (unsigned int i = 0 ; i < shadowRays ; i++) {
+			  int rdm = rand() % sceneLights.size();
+			  Vec3Df directionToLight = sceneLights[rdm].randomPoint() - intersectedPoint;
+			  directionToLight.normalize();
+			  c += 0.5f * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations - 1, isDiffusing), -dir);
+			//c += (1.f / (raysPT + shadowRays)) * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations - 1, isDiffusing), -dir);
+
+			}*/
+		}
+	}
+	return c;
+}
+
+Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir) {
 	Scene* scene = Scene::getInstance();
 
 	vector<Vertex> verticesIntersected;
@@ -53,7 +135,7 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 
 	unsigned nbReflexion=0;
 
-	rayTrace(origin, dir, iterations, nbReflexion, objectsIntersected, verticesIntersected, directionsIntersected);
+	rayTrace(origin, dir, nbReflexion, objectsIntersected, verticesIntersected, directionsIntersected);
 
 	Vertex intersectedVertex;
 	unsigned int intersectedObject;
@@ -73,7 +155,7 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 		float visibility = (float) nbPointsDisc;
 		float occlusionRate = 1.f;
 
-		colorsIntersected.push_back(computeColor(intersectedVertex, o, directionIntersection, iterations, visibility, occlusionRate));
+		colorsIntersected.push_back(computeColor(intersectedVertex, o, directionIntersection, visibility, occlusionRate));
 
 		visibilitiesIntersected.push_back(visibility);
 		occlusionRatesIntersected.push_back(occlusionRate);
@@ -96,7 +178,7 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int itera
 
 }
 
-void RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, unsigned& nbReflexion,
+void RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned& nbReflexion,
 		std::vector<unsigned>& objectsIntersected,
 		std::vector<Vertex>& verticesIntersected,
 		std::vector<Vec3Df>& directionsIntersected) {
@@ -125,59 +207,59 @@ void RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterati
 	}
 
 
-	if (hasIntersection) {
+	if (hasIntersection)
+	{
 		const Object& auxO = scene->getObjects()[intersectedObject];
 
-			if(auxO.getMaterial().getRefraction()>1.0f)
-			{
-				float n1;
-				float n2;
-				Vec3Df normal =intersectedVertex.getNormal();
+		if(auxO.getMaterial().getRefraction()>1.0f)
+		{
+			float n1;
+			float n2;
+			Vec3Df normal =intersectedVertex.getNormal();
 
-				//first intersection
-				if(verticesIntersected.size()==0)
+			//first intersection
+			if(verticesIntersected.size()==0)
+			{
+				n1=1.0f;
+				n2=auxO.getMaterial().getRefraction();
+			}
+			else
+			{
+				//if the current object is the same as the previous
+				if(objectsIntersected[objectsIntersected.size()-1]==intersectedObject)
+				{
+					n1=auxO.getMaterial().getRefraction();	
+					n2=1.0f;
+					normal=-normal;
+				}
+				else
 				{
 					n1=1.0f;
 					n2=auxO.getMaterial().getRefraction();
 				}
-				else
-				{
-					//if the current object is the same as the previous
-					if(objectsIntersected[objectsIntersected.size()-1]==intersectedObject)
-					{
-						n1=auxO.getMaterial().getRefraction();	
-						n2=1.0f;
-						normal=-normal;
-					}
-					else
-					{
-						n1=1.0f;
-						n2=auxO.getMaterial().getRefraction();
-					}
-				}
-
-				float cos1 = Vec3Df::dotProduct(normal, -dir);
-				float cos2=1-((n1*n1)/(n2*n2))*(1-cos1*cos1);
-				if(cos2>0.0f)
-				{
-					cos2=sqrt(cos2);
-					Vec3Df refractedDir;
-					if(cos1>0.0f)
-						refractedDir=(n1/n2)*dir+((n1/n2)*cos1-cos2)*normal;
-					else
-						refractedDir=(n1/n2)*dir+((n1/n2)*cos1+cos2)*normal;
-
-					refractedDir.normalize();
-					rayTrace(intersectedVertex.getPos() + auxO.getTrans(),refractedDir, iterations, nbReflexion, objectsIntersected, verticesIntersected, directionsIntersected);
-				}
-				else
-				{
-					Vec3Df reflectedDir=dir+2*cos1*normal;
-					reflectedDir.normalize();
-					rayTrace(intersectedVertex.getPos() + auxO.getTrans(),reflectedDir, iterations, nbReflexion, objectsIntersected, verticesIntersected, directionsIntersected);
-
-				}
 			}
+
+			float cos1 = Vec3Df::dotProduct(normal, -dir);
+			float cos2=1-((n1*n1)/(n2*n2))*(1-cos1*cos1);
+			if(cos2>0.0f)
+			{
+				cos2=sqrt(cos2);
+				Vec3Df refractedDir;
+				if(cos1>0.0f)
+					refractedDir=(n1/n2)*dir+((n1/n2)*cos1-cos2)*normal;
+				else
+					refractedDir=(n1/n2)*dir+((n1/n2)*cos1+cos2)*normal;
+
+				refractedDir.normalize();
+				rayTrace(intersectedVertex.getPos() + auxO.getTrans(),refractedDir, nbReflexion, objectsIntersected, verticesIntersected, directionsIntersected);
+			}
+			else
+			{
+				Vec3Df reflectedDir=dir+2*cos1*normal;
+				reflectedDir.normalize();
+				rayTrace(intersectedVertex.getPos() + auxO.getTrans(),reflectedDir, nbReflexion, objectsIntersected, verticesIntersected, directionsIntersected);
+			}
+		}
 		else
 		{ 
 			verticesIntersected.push_back(intersectedVertex);
@@ -207,7 +289,7 @@ void RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterati
 					}
 					reflectionDir.normalize();
 
-					rayTrace(intersectedVertex.getPos() + auxO.getTrans(),reflectionDir, iterations, nbReflexion, objectsIntersected, verticesIntersected, directionsIntersected);
+					rayTrace(intersectedVertex.getPos() + auxO.getTrans(),reflectionDir, nbReflexion, objectsIntersected, verticesIntersected, directionsIntersected);
 				}
 			}
 		}
@@ -241,7 +323,6 @@ Vec3Df RayTracer::computeFinalColor(const vector<unsigned>& objectsIntersected,
 				finalColor=mat.getReflectivity()*(mat.getMirrorColorBlendingFactor()*mat.getColor()+(1.0f-mat.getMirrorColorBlendingFactor())*finalColor);
 			finalColor=visibilitiesIntersected[i]*occlusionRatesIntersected[i]*finalColor;
 		}
-
 	}
 	return finalColor;	
 }
@@ -256,6 +337,10 @@ QImage RayTracer::render(const Vec3Df& camPos,
 		unsigned int screenHeight) {
 	QImage image (QSize (screenWidth, screenHeight), QImage::Format_RGB888);
 
+	/*Vec3Df** imageTemp = new Vec3Df*[screenWidth];
+	  for (unsigned int i = 0; i < screenWidth; i++)
+	  imageTemp[i] = new Vec3Df[screenHeight];
+	//float max = 0.f;*/
 	QProgressDialog progressDialog ("Raytracing...", "Cancel", 0, 100);
 	progressDialog.show ();
 	unsigned int raysPerPixel = antialiasingMode == Uniform ? aaGrid : 1;
@@ -279,18 +364,38 @@ QImage RayTracer::render(const Vec3Df& camPos,
 					Vec3Df dir = direction + step;
 					dir.normalize();
 
-					c += rayTrace(camPos, dir, iterationsPT);
+					if (ptMode == PTDisabled)
+						c += rayTrace(camPos, dir);
+					else
+						c += pathTrace(camPos, dir, 0, false);
 				}
 			}
 			c *= 255.0f / (raysPerPixel * raysPerPixel);
 			image.setPixel(i, j, qRgb(clamp(c[0], 0, 255), clamp(c[1], 0, 255), clamp(c[2], 0, 255)));
+			//imageTemp[i][j] = c;
+			/*if (c[0] > max)
+			  max = c[0];
+			  if (c[1] > max)
+			  max = c[1];
+			  if (c[3] > max)
+			  max = c[3];*/
 		}
 	}
+	/*for (unsigned int i = 0; i < screenWidth; i++) {
+	  for (unsigned int j = 0; j < screenHeight; j++) {
+	//Vec3Df c = imageTemp[i][j] / max * 255.0f;
+	image.setPixel(i, j, qRgb(clamp(c[0], 0, 255), clamp(c[1], 0, 255), clamp(c[2], 0, 255)));
+	}
+	}
+	for (unsigned int i = 0; i < screenWidth; i++)
+	delete [] imageTemp[i];
+	delete [] imageTemp;*/
+
 	progressDialog.setValue (100);
 	return image;
 }
 
-Vec3Df RayTracer::computeColor(const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, unsigned iterations, float& visibility, float& occlusionRate)
+Vec3Df RayTracer::computeColor(const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, float& visibility, float& occlusionRate)
 {
 	Scene* scene = Scene::getInstance();
 	Vec3Df c(0.f, 0.f, 0.f);
@@ -415,26 +520,6 @@ Vec3Df RayTracer::computeColor(const Vertex& intersectedVertex, const Object& o,
 	}
 
 	visibility /= (float) nbPointsDisc;
-
-	// path-tracing : recursive ray-tracing
-	if (iterations > 1) {
-		Vec3Df base1(0, -normal[2], normal[1]);
-		Vec3Df base2 = Vec3Df::crossProduct(normal, base1);
-		Vec3Df rayDirection;
-		for (unsigned int i = 0 ; i < raysPT ; i++) {
-			// computes a random direction for the ray
-			float rdm = (float) rand() / ((float) RAND_MAX);
-			float rdm2 = (float) rand() / ((float) RAND_MAX);
-			Vec3Df tmp (1.f, M_PI * rdm * (180.f / 180.f) / 2.f, rdm2 * 2 * M_PI);
-			Vec3Df aux = Vec3Df::polarToCartesian(tmp);
-			// places the direction in the hemisphere supported by the normal of the point
-			rayDirection[0] = base1[0] * aux[0] + base2[0] * aux[1] + normal[0] * aux[2];
-			rayDirection[1] = base1[1] * aux[0] + base2[1] * aux[1] + normal[1] * aux[2];
-			rayDirection[2] = base1[2] * aux[0] + base2[2] * aux[1] + normal[2] * aux[2];
-
-			c += (1.f / (raysPT)) * rayTrace(intersectedPoint, rayDirection, iterations - 1);
-		}
-	}
 
 	return c;
 
