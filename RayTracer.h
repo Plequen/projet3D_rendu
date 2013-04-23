@@ -1,3 +1,4 @@
+
 // *********************************************************
 // Ray Tracer Class
 // Author : Tamy Boubekeur (boubek@gmail.com).
@@ -44,8 +45,17 @@ public:
 	void setRaysPT(int r) { raysPT = r; } 
 	void setIterationsPT(int i) { iterationsPT = i; } 
 	
+	void rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, unsigned& nbReflexion,
+				  std::vector<unsigned>& objectsIntersected,
+				  std::vector<Vertex>& verticesIntersected,
+				  std::vector<Vec3Df>& directionsIntersected);
 	Vec3Df rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int interations);
-	Vec3Df computeColor(Scene* scene, const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, unsigned iterations, float& visibility, float& occlusionRate);
+
+	Vec3Df computeColor(const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, unsigned iterations, float& visibility, float& occlusionRate);
+	Vec3Df computeFinalColor(const std::vector<unsigned>& objectsIntersected,
+				    const std::vector<float>& visibilitiesIntersected,
+				    const std::vector<float>& occlusionRatesIntersected,
+				    const std::vector<Vec3Df>& colorsIntersected);
 
     
 	QImage render (const Vec3Df & camPos,
