@@ -142,7 +142,8 @@ void RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterati
 				}
 				else
 				{
-					if(scene->getObjects()[objectsIntersected[objectsIntersected.size()-1]].getMaterial().getRefraction()>1.0f)
+					//if the current object is the same as the previous
+					if(objectsIntersected[objectsIntersected.size()-1]==intersectedObject)
 					{
 						n1=auxO.getMaterial().getRefraction();	
 						n2=1.0f;
