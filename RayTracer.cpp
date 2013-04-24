@@ -109,14 +109,14 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 				//c += (1.f / (raysPT + shadowRays)) * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations - 1, isDiffusing), -dir);
 			}
 			// shadow rays
-			/*for (unsigned int i = 0 ; i < shadowRays ; i++) {
+			for (unsigned int i = 0 ; i < shadowRays ; i++) {
 				int rdm = rand() % sceneLights.size();
 				Vec3Df directionToLight = sceneLights[rdm].randomPoint() - intersectedPoint;
 				directionToLight.normalize();
-				c += 0.5f * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations - 1, isDiffusing), -dir);
+				c += 0.5f * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations + 1, isDiffusing), -dir);
 				//c += (1.f / (raysPT + shadowRays)) * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations - 1, isDiffusing), -dir);
 					
-			}*/
+			}
 		}
 	}
 	return c;
