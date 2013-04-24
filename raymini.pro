@@ -12,15 +12,14 @@ HEADERS = Window.h \
           Material.h \
           Object.h \
           Light.h \
-          AreaLight.h \
           Scene.h \
           RayTracer.h \
           Ray.h \
-    	  Vec3D.h \
-          KDTree.h \
-          KDTree2.h \
-	Direction.h \
-	  Node.h
+	  KDTree.h \
+	  KDTree2.h \
+	  Node.h \
+	  Direction.h \
+	  AreaLight.h
 
 SOURCES = Window.cpp \
           GLViewer.cpp \
@@ -33,29 +32,27 @@ SOURCES = Window.cpp \
           Object.cpp \
           Light.cpp \
           Scene.cpp \ 
-          AreaLight.cpp \
           RayTracer.cpp \
           Ray.cpp \
           Main.cpp \
-          KDTree.cpp \
-          KDTree2.cpp \
-	Direction.cpp \
-	  Node.cpp
-
+	  KDTree.cpp \
+	  KDTree2.cpp \
+	  Node.cpp \
+	  Direction.cpp \
+	  AreaLight.cpp
+          
     DESTDIR=.
 
 win32 {
-    INCLUDEPATH += 'C:\Users\plequ_000\projects\computer-graphics\extern\libQGLViewer-2.3.17'
-    LIBS += -L"C:\Users\plequ_000\projects\computer-graphics\extern\libQGLViewer-2.3.17\QGLViewer\release" \
-        -lQGLViewer2 \
-        -lglu32 \
-        -lopengl32 \
-        -lglew32
+    INCLUDEPATH += 'C:\Users\boubek\projects\cg\extern\libQGLViewer-2.3.4'
+    LIBS += -L"c:\Users\boubek\projects\cg\extern\libQGLViewer-2.3.4\QGLViewer\release" \
+            -lQGLViewer2 \
+            -lglew32
 }
-unix {
+unix {	
     LIBS += -lGLEW \
-        -lQGLViewer \
-	-lGLU
+            -lqglviewer-qt4 \
+	    -lGLU
 }
 
 MOC_DIR = .tmp
