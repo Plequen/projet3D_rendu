@@ -467,7 +467,7 @@ Vec3Df RayTracer::computeColor(const Vertex& intersectedVertex, const Object& o,
 							visibility=0.0f;
 							break;
 						}
-						else
+						else if(visibility>0.00001f)
 						{
 							visibility=ob.getMaterial().getTransparency()*nbPointsDisc;
 						}
@@ -487,6 +487,7 @@ Vec3Df RayTracer::computeColor(const Vertex& intersectedVertex, const Object& o,
 					Vec3Df directionToLightDisc = lightPosDisc - (intersectedPoint+o.getTrans());
 					directionToLightDisc.normalize();
 
+					float v=visibility;
 					for (unsigned int n = 0; n < scene->getObjects().size (); n++) 
 					{
 						const Object& ob = scene->getObjects()[n];
@@ -495,7 +496,7 @@ Vec3Df RayTracer::computeColor(const Vertex& intersectedVertex, const Object& o,
 						{
 							if(ob.getMaterial().getTransparency()<0.0001f)
 							{
-								visibility--;
+								visibility=v-1.0f;
 								break;
 							}
 							else
