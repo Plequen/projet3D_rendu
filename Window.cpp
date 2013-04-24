@@ -405,8 +405,8 @@ void Window::initControlWidget2() {
 	QHBoxLayout* raysPTLayout = new QHBoxLayout();
 	QLabel* raysPTLabel0 = new QLabel("Rays ", rayGroupBox);
 	QSlider* raysPTSlider = new QSlider(Qt::Horizontal, rayGroupBox);
-	raysPTSlider->setRange(0, 10);
-	raysPTSlider->setValue(1);
+	raysPTSlider->setRange(1, 300);
+	raysPTSlider->setValue(10);
 	raysPTLabel = new QLabel("10", rayGroupBox);
 	connect(raysPTSlider, SIGNAL(valueChanged(int)), this, SLOT(setRaysPT(int)));
 	raysPTLayout->addWidget(raysPTLabel0);
