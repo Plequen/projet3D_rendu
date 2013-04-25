@@ -441,6 +441,8 @@ QImage RayTracer::render(const Vec3Df& camPos,
 				}
 			}
 			visibilityMatrix[j][i]/=(raysPerPixel * raysPerPixel);
+			//c = Vec3Df(255.0f, 255.0f, 255.0f) ;
+			//image.setPixel(i, j, qRgb(clamp(c[0], 0, 255), clamp(c[1], 0, 255), clamp(c[2], 0, 255)));
 			c *= 255.0f / (raysPerPixel * raysPerPixel);
 			image.setPixel(i, j, qRgb(clamp(c[0], 0, 255), clamp(c[1], 0, 255), clamp(c[2], 0, 255)));
 			//imageTemp[i][j] = c;
@@ -465,7 +467,9 @@ QImage RayTracer::render(const Vec3Df& camPos,
 	if (ptMode == PTDisabled)
 	{
 		if(gaussianFilterMode != GaussianFilterDisabled)
+		{
 			gaussianFilter(visibilityMatrix, standardDeviation, sizeMask, screenWidth, screenHeight);
+		}
 
 		QRgb colorPixel;
 		Vec3Df colorAfterFilter(0.0f, 0.0f, 0.0f);
@@ -475,12 +479,10 @@ QImage RayTracer::render(const Vec3Df& camPos,
 			for(unsigned int j = 0 ; j<screenHeight ; j++)
 			{
 				colorPixel = image.pixel(i,j);
-				//cout << visibilityVector[j+i*screenWidth] << endl;
 				colorAfterFilter[0] = qRed(colorPixel)*visibilityMatrix[j][i];			
 				colorAfterFilter[1] = qGreen(colorPixel)*visibilityMatrix[j][i];			
 				colorAfterFilter[2] = qBlue(colorPixel)*visibilityMatrix[j][i];
 
-				//	cout << colorAfterFilter[0] << " " << colorAfterFilter[1] << " " << colorAfterFilter[2] << endl;			
 				image.setPixel(i, j, qRgb(clamp(colorAfterFilter[0], 0, 255), clamp(colorAfterFilter[1], 0, 255), clamp(colorAfterFilter[2], 0, 255)));
 			}
 		}
@@ -637,52 +639,74 @@ void RayTracer::gaussianFilter(vector<vector<float> >& visibility, const float S
 	double coeffMask [sizeMask][sizeMask];
 	float visibilityPadding [coeffMaskHeight][coeffMaskWidth];
 
+	float sumCoeff = 0.0f;
+	cout << "h : " << screenHeight << " ; w : " << screenWidth << "    " << coeffMaskHeight << "   " << coeffMaskWidth;
 	//Coeff for the gaussian filter sizeMask*sizeMask
 	for(unsigned int i = 0 ; i< sizeMask ; i++)
 	{
 		for(unsigned int j = 0 ; j< sizeMask ; j++)
 		{
+			//coeffMask[i][j]=0.0f;
 			float k = i-sizeMask/2;
 			float l = j-sizeMask/2;
 			coeffMask[i][j] = exp(-(k*k + l*l)/(2*VAR))/(sqrt(2*PI)*SIGMA);
+			sumCoeff+=coeffMask[i][j];
 		}
 	}
+	//coeffMask[sizeMask/2][sizeMask/2]=1.0;
 
 	//Matrix initialisation
 	for(unsigned int i = 0 ; i< coeffMaskHeight ; i++)
 	{	
-		for(unsigned int j = 0 ; j<coeffMaskWidth ; j++)
+		if(i<sizeMask/2)
 		{
-			if(i < sizeMask/2 || j<sizeMask/2 || i>(screenHeight-1+sizeMask/2) || j>(screenWidth-1 + sizeMask/2))
-			{
-				visibilityPadding[i][j] = 0.0f;
+			for(unsigned int j = 0 ; j<screenWidth ; j++)
+				visibilityPadding[i][j+sizeMask/2-1]=visibility[0][j];
+
+			for(unsigned int j =0; j<sizeMask/2-1; j++)
+				visibilityPadding[i][j]=visibility[0][0];
+			for(unsigned int j = screenWidth; j<coeffMaskWidth; j++)
+				visibilityPadding[i][j]=visibility[0][screenWidth-1];
+		}
+
+		else if(i>screenHeight+sizeMask/2-1)
+		{
+			for(unsigned int j = 0 ; j<screenWidth ; j++)
+				visibilityPadding[i][j+sizeMask/2-1]=visibility[screenHeight-1][j];
+			for(unsigned int j =0; j<sizeMask/2-1; j++)
+				visibilityPadding[i][j]=visibility[screenHeight-1][0];
+			for(unsigned int j = screenWidth; j<coeffMaskWidth; j++)
+				visibilityPadding[i][j]=visibility[screenHeight-1][screenWidth-1];
+		}
+		else
+		{
+			for(unsigned int j = 0 ; j< coeffMaskWidth ; j++)
+			{	
+				if(j<sizeMask/2)
+					visibilityPadding[i][j]=visibility[i-sizeMask/2][0];
+				if(j>sizeMask/2+screenWidth-1)
+					visibilityPadding[i][j]=visibility[i-sizeMask/2][screenWidth-1];
+				else
+					visibilityPadding[i][j]=visibility[i-sizeMask/2][j-sizeMask/2];
 			}
-			else
-			{
-				visibilityPadding[i][j] = visibility[i-sizeMask/2][j-sizeMask/2];
-			}
-		}	
+		}
 	}
 
-	float sumCoeff = 0.0f;
-	for(unsigned int i = 0 ; i<coeffMaskHeight ; i++)
+	int halfSizeMask = sizeMask/2;
+	for(unsigned int i = 0 ; i<screenHeight ; i++)
 	{
-		for(unsigned int j = 0 ; j<coeffMaskWidth ; j++)
+		for(unsigned int j = 0 ; j<screenWidth ; j++)
 		{
-			if((i+sizeMask/2) < (screenHeight-1) && (j+sizeMask/2) < (screenWidth-1))
-			{
-				visibility[i+sizeMask/2][j+sizeMask/2] = 0.0f;
-				for(unsigned int k = 0 ; k <sizeMask ; k++)
+				visibility[i][j] = 0.0f;
+				for(int k = -halfSizeMask ; k <=halfSizeMask ; k++)
 				{
-					for(unsigned int l = 0 ; l <sizeMask ; l++)
+					for(int l = -halfSizeMask ; l <= halfSizeMask ; l++)
 					{
-						visibility[i+sizeMask/2][j+sizeMask/2] += visibilityPadding[i+k][j+l]*coeffMask[k][l];
-						sumCoeff += coeffMask[k][l];
+						visibility[i][j] += visibilityPadding[i+k+sizeMask/2][j+l+sizeMask/2]*coeffMask[k+sizeMask/2][l+sizeMask/2];
 					}
 				}
-				visibility[i+sizeMask/2][j+sizeMask/2] /= sumCoeff;
-				sumCoeff = 0.0f;
-			}
+				visibility[i][j] /= sumCoeff;
 		}	
 	}
 }
+
