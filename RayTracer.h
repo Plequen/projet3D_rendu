@@ -55,6 +55,9 @@ public:
 	Vec3Df rayTrace(const Vec3Df& origin, Vec3Df& dir);
 
 	Vec3Df computeColor(const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, float& visibility, float& occlusionRate);
+	float computeOcclusionRate(const Vec3Df& intersectedPoint, const Vec3Df& normal);
+	float computeShadowVisibility(const Vec3Df& intersectedPoint, const Object& o);
+
 	Vec3Df computeFinalColor(const std::vector<unsigned>& objectsIntersected,
 				    const std::vector<float>& visibilitiesIntersected,
 				    const std::vector<float>& occlusionRatesIntersected,
