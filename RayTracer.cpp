@@ -411,7 +411,10 @@ QImage RayTracer::render(const Vec3Df& camPos,
 
 	//Gaussian Filter
 	//The size of the filter must be an odd number
-	gaussianFilter(visibilityMatrix, 2.0f, 5,screenWidth, screenHeight);
+
+	if(gaussianFilterMode != GaussianFilterDisabled)
+	{
+	gaussianFilter(visibilityMatrix, standardDeviation, sizeMask,screenWidth, screenHeight);
 	QRgb colorPixel;
 	Vec3Df colorAfterFilter(0.0f, 0.0f, 0.0f);
 
@@ -428,6 +431,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 			//	cout << colorAfterFilter[0] << " " << colorAfterFilter[1] << " " << colorAfterFilter[2] << endl;			
 			image.setPixel(i, j, qRgb(clamp(colorAfterFilter[0], 0, 255), clamp(colorAfterFilter[1], 0, 255), clamp(colorAfterFilter[2], 0, 255)));
 		}
+	}
 	}
 	progressDialog.setValue (100);
 	return image;

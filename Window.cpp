@@ -211,6 +211,30 @@ void Window::setPTMode(int m) {
 	RayTracer::getInstance()->setPTMode(m);
 }
 
+void Window::setGaussianFilterMode(int m)
+{
+	RayTracer::getInstance()->setGaussianFilterMode(m);
+}
+
+void Window::setStandardDeviationGauss(int stdDeviation)
+{
+	//Slider values between 1 and 50
+	//Standard Deviation for the filter between 0.1 and 5.0 (divide by 10)
+	RayTracer::getInstance()->setGaussianFilterMode(static_cast<int>(RayTracer::GaussianFilterEnabled));
+	RayTracer::getInstance()->setStandardDeviationFilter((float) stdDeviation/10);
+	enabledGaussianButton->setChecked(true);
+	standardDeviationGaussLabel->setText(QString::number((float) stdDeviation/10));
+}
+
+void Window::setSizeMask(int sizeMask)
+{
+	//Slider values between 1 and 10
+	//Standard Deviation for the filter between 3 and 21 (odd values only)
+	RayTracer::getInstance()->setGaussianFilterMode(static_cast<int>(RayTracer::GaussianFilterEnabled));
+	RayTracer::getInstance()->setSizeMask(2*sizeMask+1);
+	enabledGaussianButton->setChecked(true);
+	sizeMaskLabel->setText(QString::number(2*sizeMask+1));
+}
 
 void Window::setBGColor () {
     QColor c = QColorDialog::getColor (QColor (133, 152, 181), this);
@@ -473,10 +497,51 @@ void Window::initControlWidget () {
 
     layout->addWidget (previewGroupBox);
     
-        
+    //Filter
+    QGroupBox* filterGroupBox = new QGroupBox("Filters", controlWidget);
+    QVBoxLayout* filterLayout = new QVBoxLayout(filterGroupBox);
+
+    QLabel* gaussianFilterLabel = new QLabel("Gaussian Filter", filterGroupBox);
+    QButtonGroup* filterButtonGroup = new QButtonGroup(filterGroupBox);
+    QRadioButton* disabledGaussianButton = new QRadioButton("Disabled", filterGroupBox);
+    enabledGaussianButton = new QRadioButton("Enabled", filterGroupBox);
+    filterButtonGroup->addButton(disabledGaussianButton, static_cast<int>(RayTracer::GaussianFilterDisabled)); 
+    filterButtonGroup->addButton(enabledGaussianButton, static_cast<int>(RayTracer::GaussianFilterEnabled)); 
+    disabledGaussianButton->setChecked(true);
+    connect(filterButtonGroup, SIGNAL(buttonClicked(int)), this, SLOT(setGaussianFilterMode(int)));
+
+    QHBoxLayout* standardDeviationLayout = new QHBoxLayout();
+    QLabel* standardDeviationLabel0 = new QLabel("Standard Deviation", filterGroupBox);
+    QSlider* standardDeviationSlider = new QSlider(Qt::Horizontal, filterGroupBox);
+    standardDeviationSlider->setRange(1, 50);
+    standardDeviationSlider->setValue(1);
+    standardDeviationGaussLabel = new QLabel("0.1", filterGroupBox);
+    connect(standardDeviationSlider, SIGNAL(valueChanged(int)), this, SLOT(setStandardDeviationGauss(int)));
+    standardDeviationLayout->addWidget(standardDeviationLabel0);
+    standardDeviationLayout->addWidget(standardDeviationSlider);
+    standardDeviationLayout->addWidget(standardDeviationGaussLabel);
+    
+    QHBoxLayout* sizeMaskLayout = new QHBoxLayout();
+    QLabel* sizeMaskLabel0 = new QLabel("Size Mask", filterGroupBox);
+    QSlider* sizeMaskSlider = new QSlider(Qt::Horizontal, filterGroupBox);
+    sizeMaskSlider->setRange(1, 10);
+    sizeMaskSlider->setValue(1);
+    sizeMaskLabel = new QLabel("3", filterGroupBox);
+    connect(sizeMaskSlider, SIGNAL(valueChanged(int)), this, SLOT(setSizeMask(int)));
+    sizeMaskLayout->addWidget(sizeMaskLabel0);
+    sizeMaskLayout->addWidget(sizeMaskSlider);
+    sizeMaskLayout->addWidget(sizeMaskLabel);
+
+    filterLayout->addWidget(gaussianFilterLabel);
+    filterLayout->addWidget(disabledGaussianButton);
+    filterLayout->addWidget(enabledGaussianButton);
+    filterLayout->addLayout(standardDeviationLayout);
+    filterLayout->addLayout(sizeMaskLayout);
+    layout->addWidget(filterGroupBox);    
+ 
     QGroupBox * globalGroupBox = new QGroupBox ("Global Settings", controlWidget);
     QVBoxLayout * globalLayout = new QVBoxLayout (globalGroupBox);
-    
+
     QPushButton * bgColorButton  = new QPushButton ("Background Color", globalGroupBox);
     connect (bgColorButton, SIGNAL (clicked()) , this, SLOT (setBGColor()));
     globalLayout->addWidget (bgColorButton);

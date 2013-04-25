@@ -30,6 +30,7 @@ public:
 	typedef enum {AODisabled = 0, AOEnabled = 1, AOOnly = 2} AmbientOcclusionMode;
 	typedef enum {MDisabled = 0, MEnabled = 1} MirrorsMode;
 	typedef enum {PTDisabled = 0, PTEnabled = 1} PTMode;
+	typedef enum {GaussianFilterDisabled= 0, GaussianFilterEnabled = 1} GaussianFilterMode; 
 
 	inline const Vec3Df & getBackgroundColor () const { return backgroundColor;}
 	inline void setBackgroundColor (const Vec3Df & c) { backgroundColor = c; }
@@ -47,6 +48,9 @@ public:
 	void setRaysPT(int r) { raysPT = r; } 
 	void setIterationsPT(int i) { iterationsPT = i; } 
 	void setPTMode(int m) { ptMode = static_cast<PTMode>(m); }
+	void setGaussianFilterMode(int m) { gaussianFilterMode = static_cast<GaussianFilterMode>(m); }
+	void setStandardDeviationFilter(float stdDeviation) { standardDeviation = stdDeviation; }
+	void setSizeMask(int sizeMaskFilter) { sizeMask = sizeMaskFilter; }
 	
 	void rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned& nbReflexion,
 				  std::vector<unsigned>& objectsIntersected,
@@ -94,6 +98,9 @@ private:
 	unsigned int nbPointsDisc; // nb of points on the area light source (discretization)
 	unsigned int raysPT;
 	unsigned int iterationsPT;
+	GaussianFilterMode gaussianFilterMode;
+	float standardDeviation;
+	unsigned int sizeMask;
 };
 
 

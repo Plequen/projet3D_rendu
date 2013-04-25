@@ -50,6 +50,9 @@ public slots :
 	void setRaysPT(int r);
 	void setIterationsPT(int i);
 	void setPTMode(int m);
+	void setGaussianFilterMode(int m);
+    	void setStandardDeviationGauss(int stdDeviation);
+    	void setSizeMask(int sizeMask);
     
 private :
 	void initControlWidget ();
@@ -72,6 +75,9 @@ private :
 	QLabel* raysPTLabel;
 	QLabel* iterPTLabel;
 	QRadioButton* ptEnabledButton;
+	QRadioButton* enabledGaussianButton;
+	QLabel* standardDeviationGaussLabel;
+	QLabel* sizeMaskLabel;
 
 	QImage* image;
 	QImage computedImage;
