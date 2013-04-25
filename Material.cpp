@@ -17,6 +17,7 @@ Vec3Df Material::computeColor(Vec3Df& normal, Vec3Df directionIn, Vec3Df colorIn
 	float spec = Vec3Df::dotProduct(r, directionOut); 
 	if (spec <= EPSILON)
 		spec = 0.f;
+	spec = 0.f;
 	return (this->diffuse * diff + this->specular * spec) * colorIn * this->color;
 }
 

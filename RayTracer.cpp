@@ -13,6 +13,7 @@
 #include "KDTree.h"
 #include "Direction.h"
 #include <QProgressDialog>
+# include <omp.h>
 
 #define INFINITE_DISTANCE	1000000.0f		
 #define EPSILON	0.00001f
@@ -111,16 +112,19 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 				// computes a random direction for the ray
 				rayDirection = Direction::random(normal, base1, base2, 180.f);	
 				//c += 0.5f * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations - 1, isDiffusing), -dir);
-				c += material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations + 1, isDiffusing, samples), -dir);
+				c +=  (1.f / raysPT) * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations + 1, isDiffusing, samples), -dir);
 				//c += (1.f / (raysPT + shadowRays)) * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations - 1, isDiffusing), -dir);
 			}
 			// shadow rays
 			for (unsigned int i = 0 ; i < shadowRays ; i++) {
-				int rdm = rand() % sceneLights.size();
-				Vec3Df directionToLight = sceneLights[rdm].randomPoint() - intersectedPoint;
-				directionToLight.normalize();
-				c += material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations - 1, isDiffusing, samples), -dir);
-				//c += (1.f / (raysPT + shadowRays)) * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations - 1, isDiffusing), -dir);
+				for (unsigned int j = 0 ; j < sceneLights.size() ; j++) {
+					int rdm = rand() % sceneLights.size();
+					rdm = j;
+					Vec3Df directionToLight = sceneLights[rdm].randomPoint() - intersectedPoint;
+					directionToLight.normalize();
+					c += (1.f / (shadowRays * sceneLights.size())) * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations + 1, isDiffusing, samples), -dir);
+					//c += (1.f / (raysPT + shadowRays)) * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations + 1, isDiffusing), -dir);
+				}
 			}
 		}
 	}
@@ -338,7 +342,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 		unsigned int screenHeight) {
 	QImage image (QSize (screenWidth, screenHeight), QImage::Format_RGB888);
 
-	Vec3Df** imageTemp = new Vec3Df*[screenWidth];
+	/*Vec3Df** imageTemp = new Vec3Df*[screenWidth];
 	  for (unsigned int i = 0; i < screenWidth; i++)
 	  imageTemp[i] = new Vec3Df[screenHeight];
 	//float max = 0.f;*/
@@ -346,8 +350,10 @@ QImage RayTracer::render(const Vec3Df& camPos,
 	progressDialog.show ();
 	unsigned int raysPerPixel = antialiasingMode == Uniform ? aaGrid : 1;
 
+//#pragma omp parallel for schedule(dynamic, 1, private(c))
 	transparencyMode = true;
-	unsigned int maxSamples = 0;
+	unsigned int maxSamples = 1;
+	//unsigned int samples = 0;
 	for (unsigned int i = 0; i < screenWidth; i++) {
 		progressDialog.setValue ((100*i)/screenWidth);
 		for (unsigned int j = 0; j < screenHeight; j++) {
@@ -358,6 +364,8 @@ QImage RayTracer::render(const Vec3Df& camPos,
 			Vec3Df c = Vec3Df(0.0f, 0.0f, 0.0f);
 			for (unsigned int l = 0 ; l < raysPerPixel ; l++) {
 				for (unsigned int m = 0 ; m < raysPerPixel ; m++) {
+#pragma omp parallel private(l, m)
+{
 					float stepAAX = (0.5f + float (l)) / raysPerPixel - 0.5f;  
 					float stepAAY = (0.5f + float (m)) / raysPerPixel - 0.5f;  
 					Vec3Df stepX = (stepPixelX + stepAAX) / screenWidth * tanX * rightVector;
@@ -371,14 +379,16 @@ QImage RayTracer::render(const Vec3Df& camPos,
 					else {
 						unsigned int samples = 0;
 						c += pathTrace(camPos, dir, 0, false, samples);
-						if (samples > maxSamples)
-							maxSamples = samples;
+						//if (samples > maxSamples)
+							//maxSamples = samples;
 					}
+}
 				}
 			}
-			c *= 255.0f / (raysPerPixel * raysPerPixel);
-			//image.setPixel(i, j, qRgb(clamp(c[0], 0, 255), clamp(c[1], 0, 255), clamp(c[2], 0, 255)));
-			imageTemp[i][j] = c;
+			//samples = 1;
+			c *= 255.0f / (raysPerPixel * raysPerPixel); //* samples);
+			image.setPixel(i, j, qRgb(clamp(c[0], 0, 255), clamp(c[1], 0, 255), clamp(c[2], 0, 255)));
+			//imageTemp[i][j] = c;
 			/*if (c[0] > max)
 			  max = c[0];
 			  if (c[1] > max)
@@ -387,16 +397,17 @@ QImage RayTracer::render(const Vec3Df& camPos,
 			  max = c[3];*/
 		}
 	}
-	cout << "m" << maxSamples << endl;
-	for (unsigned int i = 0; i < screenWidth; i++) {
+	//cout << "m" << maxSamples << endl;
+	//maxSamples = 1;
+	/*for (unsigned int i = 0; i < screenWidth; i++) {
 		for (unsigned int j = 0; j < screenHeight; j++) {
-			Vec3Df c = imageTemp[i][j] / maxSamples;
+			Vec3Df c = imageTemp[i][j] / maxSamples;	
 			image.setPixel(i, j, qRgb(clamp(c[0], 0, 255), clamp(c[1], 0, 255), clamp(c[2], 0, 255)));
 		}
 	}
 	for (unsigned int i = 0; i < screenWidth; i++)
 		delete [] imageTemp[i];
-	delete [] imageTemp;
+	delete [] imageTemp;*/
 
 	progressDialog.setValue (100);
 	return image;

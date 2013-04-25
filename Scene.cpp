@@ -55,29 +55,25 @@ Vec3Df animation2(Vec3Df& initial, unsigned int t) {
 void Scene::buildDefaultScene () {
     Mesh groundMesh;
     groundMesh.loadOFF ("models/ground.off");
-    Material groundMat(0.8f, 0.2f, Vec3Df(0.0f,0.5f,0.5f), 0.0f, 0.5f, 0.2f, 1.0f, 0.0f);
-    //Material groundMat2(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.0f), 0.0f, 0.5f, 0.1f, 1.0f, 0.0f);
-  //  Object ground (groundMesh, groundMat);    
-    //Object ground2 (groundMesh, groundMat2);    
-    //ground2.setTrans (Vec3Df (0.f, 0.0f, 6.f));
-//	Material groundMat(0.8f, 0.2f, Vec3Df(1.f, 1.f, 1.f));
-    //Material groundMat2(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.5f), true, 0.f);
-/*
+    Material groundMat(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.5f), 0.0f, 0.5f, 0.2f, 1.0f, 0.0f);
+    Material groundMat2(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.5f), 0.0f, 0.5f, 0.1f, 1.0f, 0.0f);
+    Material groundMat3(0.8f, 0.2f, Vec3Df(1.f,1.f,1.f), 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+
 	Mesh groundMesh2;
 	groundMesh2.loadOFF("models/ground2.off");
 	Mesh groundMesh3;
 	groundMesh3.loadOFF("models/ground3.off");
-*/
-    Object ground (groundMesh, groundMat);    
-  //  Object ground2 (groundMesh2, groundMat2);    
-   // ground2.setTrans (Vec3Df (0.f, 1.95f, 1.95f));
 
-    //Object ground3 (groundMesh3, groundMat2);    
-    //ground3.setTrans (Vec3Df (-1.95f, 0.0f, 1.95f));
+    Object ground (groundMesh, groundMat);    
+    Object ground2 (groundMesh2, groundMat3);    
+   ground2.setTrans (Vec3Df (0.f, 1.95f, 1.95f));
+
+   Object ground3 (groundMesh3, groundMat2);    
+    ground3.setTrans (Vec3Df (-1.95f, 0.0f, 1.95f));
 
     objects.push_back (ground);
-    //objects.push_back (ground2);
-    //objects.push_back (ground3);
+    objects.push_back (ground2);
+    objects.push_back (ground3);
 
 
     Mesh ramMesh;
@@ -105,9 +101,9 @@ void Scene::buildDefaultScene () {
     Light l (Vec3Df (3.0f, 3.0f, 3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f);
     lights.push_back (l);
 
-    AreaLight al (Vec3Df (4.0f, -2.0f, 5.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.f, Vec3Df(-4.0f,2.0f,-3.0f));
+    AreaLight al (Vec3Df (4.0f, -2.0f, 5.0f), Vec3Df (1.0f, 1.f, 1.0f), 1.f, 2.f, Vec3Df(-4.0f,2.0f,-3.0f));
     areaLights.push_back (al);
 
-	AreaLight sun(Vec3Df(4.f, 2.f, 3.f), Vec3Df(1.f, 1.f, 1.f), 0.5f, 2.f, Vec3Df(-4.f, 2.f, -3.f));
+	AreaLight sun(Vec3Df(4.f, 2.f, 5.f), Vec3Df(1.f, 1.f, 1.f), 1.f, 2.f, Vec3Df(-4.f, 2.f, -5.f));
 	areaLights.push_back(sun);
 }

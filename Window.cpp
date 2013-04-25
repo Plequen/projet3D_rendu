@@ -290,7 +290,7 @@ void Window::initControlWidget2() {
 	noShadowsButton->setChecked(true);
 	QHBoxLayout* softShadowsLayout = new QHBoxLayout();
 	QSlider* softShadowsSlider = new QSlider(Qt::Horizontal, rayGroupBox);
-	softShadowsSlider->setRange(1, 200);
+	softShadowsSlider->setRange(0, 200);
 	softShadowsSlider->setValue(50);
 	softShadowsLabel = new QLabel("50", rayGroupBox);
 	softShadowsLayout->addWidget(softShadowsButton);
