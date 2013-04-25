@@ -378,7 +378,6 @@ QImage RayTracer::render(const Vec3Df& camPos,
 			visibilityMatrix[k][m]=0.0f;
 	}
 
-	transparencyMode=true;
 	for (unsigned int i = 0; i < screenWidth; i++) {
 		progressDialog.setValue ((100*i)/screenWidth);
 		for (unsigned int j = 0; j < screenHeight; j++) {
@@ -467,6 +466,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 	{
 		if(gaussianFilterMode != GaussianFilterDisabled)
 			gaussianFilter(visibilityMatrix, standardDeviation, sizeMask, screenWidth, screenHeight);
+
 		QRgb colorPixel;
 		Vec3Df colorAfterFilter(0.0f, 0.0f, 0.0f);
 
@@ -628,7 +628,6 @@ float RayTracer::computeShadowVisibility(const Vec3Df& intersectedPoint, const O
 	}
 	return visibility;
 }
-
 void RayTracer::gaussianFilter(vector<vector<float> >& visibility, const float SIGMA, const unsigned int sizeMask, unsigned int screenWidth, unsigned int screenHeight)
 {
 	const float VAR = SIGMA*SIGMA;
@@ -670,7 +669,7 @@ void RayTracer::gaussianFilter(vector<vector<float> >& visibility, const float S
 	{
 		for(unsigned int j = 0 ; j<coeffMaskWidth ; j++)
 		{
-			if((i+sizeMask/2) < (screenHeight) && (j+sizeMask/2) < (screenWidth))
+			if((i+sizeMask/2) < (screenHeight-1) && (j+sizeMask/2) < (screenWidth-1))
 			{
 				visibility[i+sizeMask/2][j+sizeMask/2] = 0.0f;
 				for(unsigned int k = 0 ; k <sizeMask ; k++)
@@ -687,4 +686,3 @@ void RayTracer::gaussianFilter(vector<vector<float> >& visibility, const float S
 		}	
 	}
 }
-
