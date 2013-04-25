@@ -43,7 +43,7 @@ inline int clamp (float f, int inf, int sup)
 }
 
 
-Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, bool alreadyDiffused, unsigned int& samples) {
+Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, bool alreadyDiffused, unsigned int& samples, unsigned int reflections, float n) {
 	bool hasIntersection = false;
 	Vertex intersection;
 	unsigned int leafId;
@@ -110,12 +110,12 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 		Vec3Df cIndirect(0.f, 0.f, 0.f);
 		Vec3Df cDirect(0.f, 0.f, 0.f);
 		Vec3Df cRefracted(0.f, 0.f, 0.f);
-		if (mirrorsMode == MEnabled && material.getReflectivity() > 0.f) {
+		if (mirrorsMode == MEnabled && material.getReflectivity() > 0.f && reflections > 0) {
 			Vec3Df reflectionDir = 2 * Vec3Df::dotProduct(normal, -dir) * normal + dir;
 			float glossiness = material.getGlossiness();
 			if (glossiness > 0.f)
 				reflectionDir = Direction::random(reflectionDir, glossiness);
-			cMirror += pathTrace(intersectedPoint, reflectionDir, iterations, isDiffusing, samples);
+			cMirror += pathTrace(intersectedPoint, reflectionDir, iterations, isDiffusing, samples, reflections - 1, n);
 		}
 		//else {
 		if (material.getRefraction() > 1.f) {
@@ -124,7 +124,7 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 
 			float cos1 = Vec3Df::dotProduct(normal, -dir);
 			if (cos1 > 0.f) { // entering the object
-				n1 = 1.f;
+				n1 = n;
 				n2 = material.getRefraction();
 			}
 			else { // getting out of the object
@@ -139,7 +139,7 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 				else
 					refractedDir = (n1 / n2) * dir + ((n1 / n2) * cos1 + cos2) * normal;
 				refractedDir.normalize();
-				cRefracted += pathTrace(intersectedPoint, refractedDir, iterations, isDiffusing, samples);
+				cRefracted += pathTrace(intersectedPoint, refractedDir, iterations, isDiffusing, samples, reflections, n2);
 			}
 		}
 		if (material.getMirrorColorBlendingFactor() < 1.f) {
@@ -147,7 +147,7 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 				// computes a random direction for the ray
 				rayDirection = Direction::random(normal, base1, base2, 180.f);	
 				//c += 0.5f * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations - 1, isDiffusing), -dir);
-				cIndirect +=  (1.f / raysPT) * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations + 1, isDiffusing, samples), -dir);
+				cIndirect +=  (1.f / raysPT) * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations + 1, isDiffusing, samples, reflections, n), -dir);
 				//c += (1.f / (raysPT + shadowRays)) * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations - 1, isDiffusing), -dir);
 			}
 			// shadow rays
@@ -157,7 +157,7 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 					rdm = j;
 					Vec3Df directionToLight = sceneLights[rdm].randomPoint() - intersectedPoint;
 					directionToLight.normalize();
-					cDirect += (1.f / (shadowRays * sceneLights.size())) * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations + 1, isDiffusing, samples), -dir);
+					cDirect += (1.f / (shadowRays * sceneLights.size())) * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations + 1, isDiffusing, samples, reflections, n), -dir);
 					//c += (1.f / (raysPT + shadowRays)) * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations + 1, isDiffusing), -dir);
 				}
 			}
@@ -415,7 +415,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 						c += rayTrace(camPos, dir);
 					else {
 						unsigned int samples = 0;
-						c += pathTrace(camPos, dir, 0, false, samples);
+						c += pathTrace(camPos, dir, 0, false, samples, 3, 1.f);
 						//if (samples > maxSamples)
 							//maxSamples = samples;
 					}

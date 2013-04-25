@@ -56,7 +56,7 @@ void Scene::buildDefaultScene () {
     Mesh groundMesh;
     groundMesh.loadOFF ("models/ground.off");
 	// gloss, reflec, blending, refrac, transp
-    Material groundMat(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.5f), 0.0f, 0.f, 0.f, 1.0f, 0.0f);
+    Material groundMat(0.8f, 0.2f, Vec3Df(1.f,1.f,1.f), 0.0f, 0.f, 0.f, 1.0f, 0.0f);
     Material groundMat2(0.8f, 0.2f, Vec3Df(0.5f,0.5f,0.5f), 0.0f, 1.f, 1.f, 1.0f, 0.0f);
     Material groundMat3(0.8f, 0.2f, Vec3Df(1.f,1.f,1.f), 0.0f, 1.0f, 1.0f, 1.0f, 0.0f);
 
@@ -79,7 +79,7 @@ void Scene::buildDefaultScene () {
 
     Mesh ramMesh;
     ramMesh.loadOFF ("models/sphere.off");
-    Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f), 0.0f, 0.f, 1.0f, 1.2f, 0.8f);
+    Material ramMat (1.f, 1.f, Vec3Df (0.f, 1.f, 1.f), 0.0f, 0.2f, 1.0f, 1.2f, 0.8f);
     Object ram (ramMesh, ramMat);
     ram.setTrans (Vec3Df (0.f, 0.0f, 1.f));
 	ram.setAnimationFunction(animation1);

@@ -61,7 +61,7 @@ public:
 				    const std::vector<Vec3Df>& colorsIntersected);
 
 	
-	Vec3Df pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, bool alreadyDiffused, unsigned int& samples); 
+	Vec3Df pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, bool alreadyDiffused, unsigned int& samples, unsigned int reflections, float n); 
     
 	QImage render (const Vec3Df & camPos,
 		const Vec3Df & viewDirection,
