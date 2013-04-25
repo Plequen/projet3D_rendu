@@ -1,3 +1,4 @@
+
 #include <GL/glew.h>
 #include "Window.h"
 
@@ -87,7 +88,7 @@ void Window::renderRayImage () {
     QTime timer;
     timer.start ();
 	
-	int imagesNumber = 1;
+	const int imagesNumber = 1;
 	
 	QImage image[imagesNumber];
 
@@ -142,10 +143,10 @@ void Window::setAAMode(int m) {
 }
 
 void Window::setAAGrid(int grid) {
-	RayTracer::getInstance()->setAAMode(static_cast<int>(RayTracer::Uniform));
+	//RayTracer::getInstance()->setAAMode(static_cast<int>(RayTracer::Uniform));
 	RayTracer::getInstance()->setAAGrid(grid);
 	antialiasingLabel->setText(QString::number(grid));	
-	uniformAA->setChecked(true);	
+	//uniformAA->setChecked(true);	
 }
 
 void Window::setShadowsMode(int m) {
@@ -210,6 +211,25 @@ void Window::setIterationsPT(int i) {
 void Window::setPTMode(int m) {
 	RayTracer::getInstance()->setPTMode(m);
 }
+void Window::setfocusBlurSamples( int s) {
+	RayTracer::getInstance()->setdofMode(static_cast<int>(RayTracer::DOFEnabled));
+	dofSet->setCheckState( Qt::Checked);
+	RayTracer::getInstance()->setfocusBlurSamples(s);
+	focusBlurSamplesLabel->setText(QString::number(s));
+}
+
+void Window::setfocalDistance(double f) {
+	RayTracer::getInstance()->setdofMode(static_cast<int>(RayTracer::DOFEnabled));
+	dofSet->setCheckState( Qt::Checked);
+	RayTracer::getInstance()->setfocalDistance(f);
+}
+void Window::setaperture(double f) {
+	RayTracer::getInstance()->setdofMode(static_cast<int>(RayTracer::DOFEnabled));
+	dofSet->setCheckState( Qt::Checked);
+	RayTracer::getInstance()->setaperture(f);}
+
+void Window::setDOFMode(int s) {
+	RayTracer::getInstance()->setdofMode(s);}
 
 
 void Window::setBGColor () {
@@ -257,10 +277,10 @@ void Window::initControlWidget2() {
 	QButtonGroup* aaButtonGroup = new QButtonGroup(rayGroupBox);
 	QRadioButton* noAA = new QRadioButton("None", rayGroupBox);
 	uniformAA = new QRadioButton("Uniform", rayGroupBox);
-	QRadioButton* poissonAA = new QRadioButton("Poisson", rayGroupBox);
+	stochasticAA = new QRadioButton("Stochastic", rayGroupBox);
 	aaButtonGroup->addButton(noAA, static_cast<int>(RayTracer::None)); 
 	aaButtonGroup->addButton(uniformAA, static_cast<int>(RayTracer::Uniform)); 
-	aaButtonGroup->addButton(poissonAA, static_cast<int>(RayTracer::Poisson)); 
+	aaButtonGroup->addButton(stochasticAA, static_cast<int>(RayTracer::Stochastic)); 
 	noAA->setChecked(true);
 	connect(aaButtonGroup, SIGNAL(buttonClicked(int)), this, SLOT(setAAMode(int)));
 	QSlider* antialiasingSlider = new QSlider(Qt::Horizontal, rayGroupBox);
@@ -276,7 +296,7 @@ void Window::initControlWidget2() {
 	uniformAALayout->addWidget(antialiasingSlider);
 	uniformAALayout->addWidget(antialiasingLabel);
 	rayLayout->addLayout(uniformAALayout);
-	rayLayout->addWidget(poissonAA);
+	rayLayout->addWidget(stochasticAA);
 
 	// Shadows settings
 	QLabel* shadowsLabel = new QLabel("Shadows", rayGroupBox);
@@ -429,6 +449,57 @@ void Window::initControlWidget2() {
 	rayLayout->addWidget(ptEnabledButton);
 	rayLayout->addLayout(raysPTLayout);
 	rayLayout->addLayout(iterPTLayout);
+
+	//Focus Blur settings
+	QHBoxLayout* dofLayout = new QHBoxLayout();
+	QLabel* dofLabel = new QLabel("Depth of field", rayGroupBox);
+	dofSet = new QCheckBox(rayGroupBox);
+	dofSet->setCheckState( Qt::Unchecked);
+	connect(dofSet, SIGNAL(stateChanged(int)), this, SLOT(setDOFMode(int)));
+
+	QHBoxLayout* focusBlurLayout = new QHBoxLayout();
+	QLabel* focusBlurMaxSamples0 = new QLabel("Echantillons ", rayGroupBox);
+	QSlider* focusBlurSamplesSlider = new QSlider(Qt::Horizontal, rayGroupBox);
+	focusBlurSamplesSlider->setRange(1, 32);
+	focusBlurSamplesSlider->setValue(1);
+	focusBlurSamplesLabel = new QLabel("1",rayGroupBox);
+	connect(focusBlurSamplesSlider, SIGNAL(valueChanged(int)), this, SLOT(setfocusBlurSamples(int)));
+
+	QHBoxLayout* focusDistLayout = new QHBoxLayout();
+	QLabel* focusDist0 = new QLabel("Focal Distance ", rayGroupBox);
+	QDoubleSpinBox* focusDistSB = new QDoubleSpinBox( rayGroupBox);
+	focusDistSB->setValue(5.0);
+	connect(focusDistSB, SIGNAL(valueChanged(double)), this, SLOT(setfocalDistance(double)));
+
+	QHBoxLayout* focusAptLayout = new QHBoxLayout();
+	QLabel* focusApt0 = new QLabel("Aperture ", rayGroupBox);
+	QDoubleSpinBox* focusAptSB = new QDoubleSpinBox(rayGroupBox);
+	focusAptSB->setMinimum(1);
+	focusAptSB->setValue(5.6);
+	connect(focusAptSB, SIGNAL(valueChanged(double)), this, SLOT(setaperture(double)));
+
+	
+
+	dofLayout->addWidget(dofLabel);
+	dofLayout->addWidget(dofSet);
+	rayLayout->addLayout(dofLayout);
+
+	focusBlurLayout->addWidget(focusBlurMaxSamples0);
+	focusBlurLayout->addWidget(focusBlurSamplesSlider);
+	focusBlurLayout->addWidget(focusBlurSamplesLabel);
+	rayLayout->addLayout(focusBlurLayout);
+
+	focusDistLayout->addWidget(focusDist0);
+	focusDistLayout->addWidget(focusDistSB);
+	rayLayout->addLayout(focusDistLayout);
+
+	focusAptLayout->addWidget(focusApt0);
+	focusAptLayout->addWidget(focusAptSB);
+	rayLayout->addLayout(focusAptLayout);
+
+
+
+
 
 
 	// other settings

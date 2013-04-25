@@ -1,3 +1,4 @@
+
 #ifndef WINDOW_H
 #define WINDOW_H
 
@@ -50,7 +51,10 @@ public slots :
 	void setRaysPT(int r);
 	void setIterationsPT(int i);
 	void setPTMode(int m);
-    
+	void setfocusBlurSamples(int s);
+	void setfocalDistance(double f);
+	void setaperture(double f);
+	void setDOFMode(int s);
 private :
 	void initControlWidget ();
 	void initControlWidget2();
@@ -63,6 +67,7 @@ private :
 	GLViewer * viewer;
 	QLabel* antialiasingLabel;		
 	QRadioButton* uniformAA;
+	QRadioButton* stochasticAA;
 	QLabel* raysAOLabel;
 	QLabel* radiusAOLabel;
 	QLabel* coneAOLabel;
@@ -72,6 +77,8 @@ private :
 	QLabel* raysPTLabel;
 	QLabel* iterPTLabel;
 	QRadioButton* ptEnabledButton;
+	QLabel* focusBlurSamplesLabel;
+	QCheckBox * dofSet;
 
 	QImage* image;
 	QImage computedImage;
