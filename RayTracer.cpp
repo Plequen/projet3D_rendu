@@ -280,8 +280,8 @@ void RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned& nbReflexio
 			verticesIntersected.push_back(intersectedVertex);
 			objectsIntersected.push_back(intersectedObject);
 			directionsIntersected.push_back(dir);
-/*
-*/
+			/*
+			 */
 			if (mirrorsMode == MEnabled) 
 			{ 
 				if(  auxO.getMaterial().getReflectivity()>0.000001f && nbReflexion < nbMaxReflexion)
@@ -331,8 +331,8 @@ Vec3Df RayTracer::computeFinalColor(const vector<unsigned>& objectsIntersected,
 			const Material& mat = scene->getObjects()[objectsIntersected[i]].getMaterial();
 			if(mat.getReflectivity()>0.001f && mirrorsMode == MEnabled)
 				finalColor=mat.getReflectivity()*(mat.getColorBlendingFactor()*mat.getColor()+(1.0f-mat.getColorBlendingFactor())*finalColor);
-				//finalColor*=visibilitiesIntersected[i]*occlusionRatesIntersected[i];
-				finalColor*=occlusionRatesIntersected[i];
+			//finalColor*=visibilitiesIntersected[i]*occlusionRatesIntersected[i];
+			finalColor*=occlusionRatesIntersected[i];
 		}
 	}
 	return finalColor;	
@@ -397,7 +397,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 					}
 					else if (antialiasingMode == Uniform)
 					{
-						 
+
 						stepAAX = (float (l)) / raysPerPixel - 0.5f;  
 						stepAAY = (float (m)) / raysPerPixel - 0.5f;   
 					}
@@ -463,9 +463,10 @@ QImage RayTracer::render(const Vec3Df& camPos,
 	delete [] imageTemp[i];
 	delete [] imageTemp;*/
 	//The size of the filter must be an odd number
-	if (ptMode == PTDisabled && dofMode != DOFEnabled)
+	if (ptMode == PTDisabled)
 	{
-		gaussianFilter(visibilityMatrix, 2.0f, 5,screenWidth, screenHeight);
+		if(gaussianFilterMode != GaussianFilterDisabled)
+			gaussianFilter(visibilityMatrix, standardDeviation, sizeMask, screenWidth, screenHeight);
 		QRgb colorPixel;
 		Vec3Df colorAfterFilter(0.0f, 0.0f, 0.0f);
 
@@ -669,7 +670,7 @@ void RayTracer::gaussianFilter(vector<vector<float> >& visibility, const float S
 	{
 		for(unsigned int j = 0 ; j<coeffMaskWidth ; j++)
 		{
-			if((i+sizeMask/2) < (screenHeight-1) && (j+sizeMask/2) < (screenWidth-1))
+			if((i+sizeMask/2) < (screenHeight) && (j+sizeMask/2) < (screenWidth))
 			{
 				visibility[i+sizeMask/2][j+sizeMask/2] = 0.0f;
 				for(unsigned int k = 0 ; k <sizeMask ; k++)

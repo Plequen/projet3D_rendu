@@ -31,6 +31,7 @@ public:
 	typedef enum {MDisabled = 0, MEnabled = 1} MirrorsMode;
 	typedef enum {PTDisabled = 0, PTEnabled = 1} PTMode;
 	typedef enum {DOFDisabled = 0 , DOFEnabled = 2} DOFMode;
+	typedef enum {GaussianFilterDisabled= 0, GaussianFilterEnabled = 1} GaussianFilterMode; 
 
 	inline const Vec3Df & getBackgroundColor () const { return backgroundColor;}
 	inline void setBackgroundColor (const Vec3Df & c) { backgroundColor = c; }
@@ -52,6 +53,9 @@ public:
 	void setfocalDistance(double f) {focalDistance = f;}
 	void setaperture(double f){aperture = f;}
 	void setdofMode(int s) {dofMode = static_cast<DOFMode>(s);}
+	void setGaussianFilterMode(int m) { gaussianFilterMode = static_cast<GaussianFilterMode>(m); }
+	void setStandardDeviationFilter(float stdDeviation) { standardDeviation = stdDeviation; }
+	void setSizeMask(int sizeMaskFilter) { sizeMask = sizeMaskFilter; }
 	
 	void rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned& nbReflexion,
 				  std::vector<unsigned>& objectsIntersected,
@@ -106,6 +110,9 @@ private:
 	unsigned int focusBlurSamples;
 	double focalDistance ;
 	double aperture;
+	GaussianFilterMode gaussianFilterMode;
+	float standardDeviation;
+	unsigned int sizeMask;
 };
 
 
