@@ -55,11 +55,17 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 	// search the nearest intersection point between the ray and the scene
 	vector<Object>& sceneObjects = scene->getObjects();
 	float smallestIntersectionDistance = INFINITE_DISTANCE;
+	float smallestTemp = INFINITE_DISTANCE;
+	Vec3Df transFactor = Vec3Df(1.f, 1.f, 1.f);
 	for (unsigned int i = 0 ; i < sceneObjects.size() ; i++) {
 		const Object& o = sceneObjects[i];
-		Ray ray(origin - o.getTrans(), dir);
+		Ray ray(origin - o.getTrans(), dir);	
 		// tests if the ray intersects the object and if the distance from the origin is the lowest so far
 		if (o.intersectsRay(ray, intersection, smallestIntersectionDistance, leafId)) {
+			if (o.getMaterial().getRefraction() > 1.f)
+				transFactor *= o.getMaterial().getTransparency() * o.getMaterial().getColor();
+			else
+				smallestTemp = smallestIntersectionDistance;
 			hasIntersection = true;	
 			intersectedVertex = intersection;
 			intersectedObject = i;
@@ -77,8 +83,8 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 	for (unsigned int i = 0 ; i < sceneLights.size() ; i++) {
 		const AreaLight& l = sceneLights[i];
 		// tests if the ray intersects the light and if the distance from the origin is lower than for the nearest object
-		if (l.intersects(ray0, smallestIntersectionDistance)) {
-			c += l.getIntensity() * l.getColor();
+		if (l.intersects(ray0, smallestTemp)) {
+			c += transFactor * l.getIntensity() * l.getColor();
 			samples++;
 		}
 	}
@@ -100,19 +106,48 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 		Direction::computeBase(normal, base1, base2);
 		Vec3Df rayDirection;
 		unsigned int shadowRays = nbPointsDisc;
-		if (mirrorsMode == MEnabled && material.getReflectivity()>0.001f) {
+		Vec3Df cMirror(0.f, 0.f, 0.f);
+		Vec3Df cIndirect(0.f, 0.f, 0.f);
+		Vec3Df cDirect(0.f, 0.f, 0.f);
+		Vec3Df cRefracted(0.f, 0.f, 0.f);
+		if (mirrorsMode == MEnabled && material.getReflectivity() > 0.f) {
 			Vec3Df reflectionDir = 2 * Vec3Df::dotProduct(normal, -dir) * normal + dir;
 			float glossiness = material.getGlossiness();
 			if (glossiness > 0.f)
 				reflectionDir = Direction::random(reflectionDir, glossiness);
-			c += 0.5 * pathTrace(intersectedPoint, reflectionDir, iterations + 1, isDiffusing, samples);
+			cMirror += pathTrace(intersectedPoint, reflectionDir, iterations, isDiffusing, samples);
 		}
-		else {
+		//else {
+		if (material.getRefraction() > 1.f) {
+			float n1; // first environment (in)
+			float n2; // second environment (out)
+
+			float cos1 = Vec3Df::dotProduct(normal, -dir);
+			if (cos1 > 0.f) { // entering the object
+				n1 = 1.f;
+				n2 = material.getRefraction();
+			}
+			else { // getting out of the object
+				n1 = material.getRefraction();
+				n2 = 1.f;
+			}
+			float cos2 = 1 - ((n1 * n1) / (n2 * n2)) * (1 - cos1 * cos1);
+			if (cos2 >= 0.f) { // there is indeed refraction
+				Vec3Df refractedDir;
+				if (cos1 >= 0.f)		
+					refractedDir = (n1 / n2) * dir + ((n1 / n2) * cos1 - cos2) * normal;
+				else
+					refractedDir = (n1 / n2) * dir + ((n1 / n2) * cos1 + cos2) * normal;
+				refractedDir.normalize();
+				cRefracted += pathTrace(intersectedPoint, refractedDir, iterations, isDiffusing, samples);
+			}
+		}
+		if (material.getMirrorColorBlendingFactor() < 1.f) {
 			for (unsigned int i = 0 ; i < raysPT ; i++) {
 				// computes a random direction for the ray
 				rayDirection = Direction::random(normal, base1, base2, 180.f);	
 				//c += 0.5f * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations - 1, isDiffusing), -dir);
-				c +=  (1.f / raysPT) * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations + 1, isDiffusing, samples), -dir);
+				cIndirect +=  (1.f / raysPT) * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations + 1, isDiffusing, samples), -dir);
 				//c += (1.f / (raysPT + shadowRays)) * material.computeColor(normal, -rayDirection, pathTrace(intersectedPoint, rayDirection, iterations - 1, isDiffusing), -dir);
 			}
 			// shadow rays
@@ -122,11 +157,13 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 					rdm = j;
 					Vec3Df directionToLight = sceneLights[rdm].randomPoint() - intersectedPoint;
 					directionToLight.normalize();
-					c += (1.f / (shadowRays * sceneLights.size())) * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations + 1, isDiffusing, samples), -dir);
+					cDirect += (1.f / (shadowRays * sceneLights.size())) * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations + 1, isDiffusing, samples), -dir);
 					//c += (1.f / (raysPT + shadowRays)) * material.computeColor(normal, -directionToLight, pathTrace(intersectedPoint, directionToLight, iterations + 1, isDiffusing), -dir);
 				}
 			}
 		}
+		//}
+		c += ((1.f - (mirrorsMode == MEnabled ? material.getMirrorColorBlendingFactor() : 0.f)) * (cIndirect + cDirect) + (mirrorsMode == MEnabled ? material.getMirrorColorBlendingFactor() : 0.f) * material.getReflectivity() * cMirror + material.getTransparency() * cRefracted);
 	}
 	return c;
 }
