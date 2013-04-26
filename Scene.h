@@ -38,6 +38,9 @@ protected:
     virtual ~Scene ();
     
 private:
+	void scenePTRefraction();
+	void scenePTReflexion();
+	void scenePTCaustique();
     void buildDefaultScene ();
     std::vector<Object> objects;
     std::vector<Light> lights;

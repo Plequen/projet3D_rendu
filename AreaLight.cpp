@@ -39,8 +39,8 @@ Vec3Df AreaLight::randomPoint() const {
 
 bool AreaLight::intersects(Ray& ray, float& distance) const {
 	// the ray does not "intersect" the light if it can't receive light from it
-	if (Vec3Df::dotProduct(ray.getDirection(), orientation) > 0.f)
-		return false;
+/*	if (Vec3Df::dotProduct(ray.getDirection(), orientation) > 0.f)
+		return false;*/
 	
 /*	float temp = Vec3Df::crossProduct(ray.getDirection(), -orientation).getLength();
 

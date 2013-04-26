@@ -118,7 +118,7 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 			cMirror += pathTrace(intersectedPoint, reflectionDir, iterations, isDiffusing, samples, reflections - 1, n);
 		}
 		//else {
-		if (material.getRefraction() > 1.f) {
+		if (material.getRefraction() > 1.f || material.getTransparency() > 0.f) {
 			float n1; // first environment (in)
 			float n2; // second environment (out)
 
@@ -133,13 +133,20 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 			}
 			float cos2 = 1 - ((n1 * n1) / (n2 * n2)) * (1 - cos1 * cos1);
 			if (cos2 >= 0.f) { // there is indeed refraction
+				cos2 = sqrt(cos2);
 				Vec3Df refractedDir;
 				if (cos1 >= 0.f)		
 					refractedDir = (n1 / n2) * dir + ((n1 / n2) * cos1 - cos2) * normal;
 				else
 					refractedDir = (n1 / n2) * dir + ((n1 / n2) * cos1 + cos2) * normal;
 				refractedDir.normalize();
-				cRefracted += pathTrace(intersectedPoint, refractedDir, iterations, isDiffusing, samples, reflections, n2);
+				cRefracted += material.getColor() * pathTrace(intersectedPoint, refractedDir, iterations, isDiffusing, samples, reflections, n2);
+			}
+			else {
+				if (reflections > 0) {
+					Vec3Df reflectionDir = dir + 2 * cos1 * normal;
+					cRefracted += 1.0 / material.getTransparency() * pathTrace(intersectedPoint, reflectionDir, iterations, isDiffusing, samples, reflections - 1, n);
+				}
 			}
 		}
 		if (material.getMirrorColorBlendingFactor() < 1.f) {
@@ -415,7 +422,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 						c += rayTrace(camPos, dir);
 					else {
 						unsigned int samples = 0;
-						c += pathTrace(camPos, dir, 0, false, samples, 3, 1.f);
+						c += pathTrace(camPos, dir, 0, false, samples, 10, 1.f);
 						//if (samples > maxSamples)
 							//maxSamples = samples;
 					}
