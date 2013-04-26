@@ -26,8 +26,8 @@ void Scene::destroyInstance () {
 }
 
 Scene::Scene () {
-    buildDefaultScene ();
-    //buildReflectionScene ();
+    //buildDefaultScene ();
+    buildReflectionScene ();
     //buildMonkeyScene();
     updateBoundingBox ();
 }
@@ -86,7 +86,7 @@ void Scene::buildDefaultScene () {
 }
 
 // Changer ce code pour creer des scenes originales
-void Scene::buildReflectionScene () {
+void Scene::buildCornellBoxScene () {
 /*
     Material groundMat(0.8f, 0.2f, Vec3Df(1.0f,1.0f,1.0f));
     Mesh cubeMesh;
@@ -121,7 +121,7 @@ void Scene::buildReflectionScene () {
 */
     Mesh sphereMesh;
     sphereMesh.loadOFF ("models/sphere.off");
-    Material sphereMat(0.8f, 0.2f, Vec3Df(0.5f, 0.3f, 0.3f), 0.0f, 0.0f, 0.0f, 1.4f, 0.9f);
+    Material sphereMat(0.8f, 0.2f, Vec3Df(0.5f, 0.3f, 0.3f), 0.0f, 0.0f, 0.0f, 1.4f, 0.5f);
     Object sphere (sphereMesh, sphereMat);    
     sphere.setTrans(Vec3Df(-0.5f, 0.5f,4.0f));
     //sphere.setTrans(Vec3Df(0.0f, 2.8f,3.0f));
@@ -170,7 +170,47 @@ void Scene::buildReflectionScene () {
     Light l (Vec3Df (0.0f, 2.8f,3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f);
     lights.push_back (l);
 
-    AreaLight al (Vec3Df (0.0f, 2.4f, 3.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.0f, Vec3Df(.0f,-1.0f,0.0f));
+    AreaLight al (Vec3Df (0.0f, 2.8f, 3.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.0f, Vec3Df(.0f,-1.0f,0.0f));
+    areaLights.push_back (al);
+
+}
+
+void Scene::buildReflectionScene () {
+    Material groundMat(0.8f, 0.2f, Vec3Df(1.0f,1.0f,1.0f));
+    Mesh cubeMesh;
+    cubeMesh.loadOFF ("models/pave.off");
+    Object cube (cubeMesh, groundMat);    
+//    objects.push_back (cube);
+    Mesh groundMesh;
+    groundMesh.loadOFF ("models/ground.off");
+    Object ground (groundMesh, groundMat);    
+    objects.push_back (ground);
+    Mesh ramMesh;
+    ramMesh.loadOFF ("models/ram.off");
+    Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f));
+    Object ram (ramMesh, ramMat);
+    ram.setTrans (Vec3Df (1.0f, -1.0f, 0.f));
+    objects.push_back (ram);
+    Mesh wallLeft;
+    wallLeft.loadOFF ("models/wall.off");
+    Material wallRightMat(0.8f, 0.2f, Vec3Df(1.0f,1.0f,1.0f), 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);
+    Object wallRightOb (wallLeft, wallRightMat);    
+    wallRightOb.setTrans(Vec3Df(0.0f, -3.0f,3.0f));
+    objects.push_back (wallRightOb);
+    Object wallLeftOb (wallLeft, wallRightMat);    
+    wallLeftOb.setTrans(Vec3Df(0.0f, 3.0f,3.0f));
+    objects.push_back (wallLeftOb);
+    Mesh wallBackGround;
+    wallBackGround.loadOFF ("models/wall.off");
+    Material wallForgroundMat(0.8f, 0.2f, Vec3Df(1.0f, 1.0f,1.0f));
+    Object wallForgroundOb (wallBackGround, wallForgroundMat);    
+    wallForgroundOb.setTrans(Vec3Df(0.0f, 3.0f,3.0f));
+    objects.push_back (wallForgroundOb);
+
+    Light l (Vec3Df (0.0f, 0.0f,3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f);
+    lights.push_back (l);
+
+    AreaLight al (Vec3Df (0.0f, 0.0f, 3.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.0f, Vec3Df(.0f,-1.0f,0.0f));
     areaLights.push_back (al);
 
 }

@@ -606,7 +606,7 @@ float RayTracer::computeShadowVisibility(const Vec3Df& intersectedPoint, const O
 		}
 		else if (shadowsMode == Soft) {
 			// random set of points on the area light source
-			sceneLights[k].discretize(nbPointsDisc, lightDirection);
+			sceneLights[k].discretize(nbPointsDisc);//, lightDirection);
 			const vector<Vec3Df>& discretization = sceneLights[k].getDiscretization();
 
 			// cast one ray for each discret point of the area light source

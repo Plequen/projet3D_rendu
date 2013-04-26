@@ -41,6 +41,7 @@ private:
     void buildDefaultScene ();
     void buildMonkeyScene();
     void buildReflectionScene ();
+    void buildCornellBoxScene (); 
     std::vector<Object> objects;
     std::vector<Light> lights;
     std::vector<AreaLight> areaLights;
