@@ -39,6 +39,8 @@ protected:
     
 private:
     void buildDefaultScene ();
+    void buildMonkeyScene();
+    void buildReflectionScene ();
     std::vector<Object> objects;
     std::vector<Light> lights;
     std::vector<AreaLight> areaLights;

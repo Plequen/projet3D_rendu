@@ -569,6 +569,8 @@ float RayTracer::computeShadowVisibility(const Vec3Df& intersectedPoint, const O
 
 	for (unsigned int k = 0 ; k < sceneLights.size() ; k++) {
 		Vec3Df lightDirection = sceneLights[k].getPos() - intersectedPoint;
+		float distanceToLight;
+		distanceToLight = Vec3Df::distance(sceneLights[k].getPos(), intersectedPoint);
 		lightDirection.normalize();
 
 		// shadows
@@ -582,21 +584,29 @@ float RayTracer::computeShadowVisibility(const Vec3Df& intersectedPoint, const O
 				if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) {
 					if(ob.getMaterial().getTransparency()<0.0001f)
 					{
-						visibility=0.0f;
-						break;
+						float dist = Vec3Df::distance(intersectedPoint, intersectionShadow.getPos()+ob.getTrans());
+						if(dist<distanceToLight)
+						{
+							visibility=0.0f;
+							break;
+						}
 					}
 
 					//if the object is transparent, the visibility will be equals to its transparency
 					else if(visibility>0.00001f)
 					{
-						visibility=ob.getMaterial().getTransparency()*nbPointsDisc;
+						float dist = Vec3Df::distance(intersectedPoint, intersectionShadow.getPos()+ob.getTrans());
+						if(dist<distanceToLight)
+						{
+							visibility=ob.getMaterial().getTransparency()*nbPointsDisc;
+						}
 					}
 				}
 			}
 		}
 		else if (shadowsMode == Soft) {
 			// random set of points on the area light source
-			sceneLights[k].discretize(nbPointsDisc);
+			sceneLights[k].discretize(nbPointsDisc, lightDirection);
 			const vector<Vec3Df>& discretization = sceneLights[k].getDiscretization();
 
 			// cast one ray for each discret point of the area light source
@@ -611,17 +621,25 @@ float RayTracer::computeShadowVisibility(const Vec3Df& intersectedPoint, const O
 				for (unsigned int n = 0; n < scene->getObjects().size (); n++) 
 				{
 					const Object& ob = scene->getObjects()[n];
-					Ray shadowRay(intersectedPoint + o.getTrans() - ob.getTrans(), directionToLightDisc);
+					Ray shadowRay(intersectedPoint  - ob.getTrans(), directionToLightDisc);
 					if (ob.intersectsRay(shadowRay, intersectionShadow, distShadow, leafIdShadow)) 
 					{
 						if(ob.getMaterial().getTransparency()<0.0001f)
 						{
+							float dist = Vec3Df::distance(intersectedPoint, intersectionShadow.getPos()+ob.getTrans());
+							if(dist<distanceToLight)
+							{
 							visibility=v-1.0f;
 							break;
+							}
 						}
 						else
 						{
+							float dist = Vec3Df::distance(intersectedPoint, intersectionShadow.getPos()+ob.getTrans());
+							if(dist<distanceToLight)
+							{
 							visibility-=(1-ob.getMaterial().getTransparency());
+							}
 						}
 					}
 				}

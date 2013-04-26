@@ -20,6 +20,7 @@ public:
 	inline const std::vector<Vec3Df>& getDiscretization() const { return discretization; }
 	inline float getRayon() const { return rayon; }
 	void discretize(unsigned k);
+	void discretize(unsigned k, const Vec3Df& dir); 
 
 	Vec3Df randomPoint() const;
 

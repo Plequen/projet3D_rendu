@@ -22,6 +22,19 @@ void AreaLight::discretize(unsigned k) {
 		discretization[i] = pos + v2;
 	}
 }
+void AreaLight::discretize(unsigned k, const Vec3Df& dir) {
+	Direction::computeBase(dir, base1, base2);
+	if (discretization.size() != k)
+		discretization.resize(k);	
+
+	for (unsigned i = 0 ; i < k ; i++) {
+		float r = rayon * rand() / RAND_MAX;
+		float angle = 2 * 3.14 * rand() / RAND_MAX;
+		Vec3Df v(r * cos(angle), r * sin(angle), 0.0f);
+		Vec3Df v2(base1[0] * v[0] + base2[0] * v[1], base1[1] * v[0] + base2[1] * v[1], base1[2] * v[0] + base2[2] * v[1]);
+		discretization[i] = pos + v2;
+	}
+}
 
 Vec3Df AreaLight::randomPoint() const {
 	float r = rayon * rand() / RAND_MAX;
