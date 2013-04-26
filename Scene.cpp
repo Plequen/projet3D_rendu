@@ -26,8 +26,8 @@ void Scene::destroyInstance () {
 }
 
 Scene::Scene () {
-    //buildDefaultScene ();
-    buildReflectionScene ();
+    buildDefaultScene ();
+    //buildReflectionScene ();
     //buildMonkeyScene();
     updateBoundingBox ();
 }
@@ -121,7 +121,7 @@ void Scene::buildReflectionScene () {
 */
     Mesh sphereMesh;
     sphereMesh.loadOFF ("models/sphere.off");
-    Material sphereMat(0.8f, 0.2f, Vec3Df(0.5f, 0.3f, 0.3f), 0.0f, 0.0f, 0.0f, 1.4f, 1.0f);
+    Material sphereMat(0.8f, 0.2f, Vec3Df(0.5f, 0.3f, 0.3f), 0.0f, 0.0f, 0.0f, 1.4f, 0.9f);
     Object sphere (sphereMesh, sphereMat);    
     sphere.setTrans(Vec3Df(-0.5f, 0.5f,4.0f));
     //sphere.setTrans(Vec3Df(0.0f, 2.8f,3.0f));
