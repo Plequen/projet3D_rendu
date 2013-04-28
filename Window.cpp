@@ -1,3 +1,4 @@
+
 #include <GL/glew.h>
 #include "Window.h"
 
@@ -87,7 +88,7 @@ void Window::renderRayImage () {
     QTime timer;
     timer.start ();
 	
-	int imagesNumber = 1;
+	const int imagesNumber = 1;
 	
 	QImage image[imagesNumber];
 
@@ -142,10 +143,10 @@ void Window::setAAMode(int m) {
 }
 
 void Window::setAAGrid(int grid) {
-	RayTracer::getInstance()->setAAMode(static_cast<int>(RayTracer::Uniform));
+	//RayTracer::getInstance()->setAAMode(static_cast<int>(RayTracer::Uniform));
 	RayTracer::getInstance()->setAAGrid(grid);
 	antialiasingLabel->setText(QString::number(grid));	
-	uniformAA->setChecked(true);	
+	//uniformAA->setChecked(true);	
 }
 
 void Window::setShadowsMode(int m) {
@@ -210,6 +211,49 @@ void Window::setIterationsPT(int i) {
 void Window::setPTMode(int m) {
 	RayTracer::getInstance()->setPTMode(m);
 }
+void Window::setGaussianFilterMode(int m)
+{
+	RayTracer::getInstance()->setGaussianFilterMode(m);
+}
+
+void Window::setStandardDeviationGauss(int stdDeviation)
+{
+	//Slider values between 1 and 50
+	//Standard Deviation for the filter between 0.1 and 5.0 (divide by 10)
+	RayTracer::getInstance()->setGaussianFilterMode(static_cast<int>(RayTracer::GaussianFilterEnabled));
+	RayTracer::getInstance()->setStandardDeviationFilter((float) stdDeviation/10);
+	enabledGaussianButton->setChecked(true);
+	standardDeviationGaussLabel->setText(QString::number((float) stdDeviation/10));
+}
+
+void Window::setSizeMask(int sizeMask)
+{
+	//Slider values between 1 and 10
+	//Standard Deviation for the filter between 3 and 21 (odd values only)
+	RayTracer::getInstance()->setGaussianFilterMode(static_cast<int>(RayTracer::GaussianFilterEnabled));
+	RayTracer::getInstance()->setSizeMask(2*sizeMask+1);
+	enabledGaussianButton->setChecked(true);
+	sizeMaskLabel->setText(QString::number(2*sizeMask+1));
+}
+void Window::setfocusBlurSamples( int s) {
+	RayTracer::getInstance()->setdofMode(static_cast<int>(RayTracer::DOFEnabled));
+	dofSet->setCheckState( Qt::Checked);
+	RayTracer::getInstance()->setfocusBlurSamples(s);
+	focusBlurSamplesLabel->setText(QString::number(s));
+}
+
+void Window::setfocalDistance(double f) {
+	RayTracer::getInstance()->setdofMode(static_cast<int>(RayTracer::DOFEnabled));
+	dofSet->setCheckState( Qt::Checked);
+	RayTracer::getInstance()->setfocalDistance(f);
+}
+void Window::setaperture(double f) {
+	RayTracer::getInstance()->setdofMode(static_cast<int>(RayTracer::DOFEnabled));
+	dofSet->setCheckState( Qt::Checked);
+	RayTracer::getInstance()->setaperture(f);}
+
+void Window::setDOFMode(int s) {
+	RayTracer::getInstance()->setdofMode(s);}
 
 
 void Window::setBGColor () {
@@ -257,10 +301,10 @@ void Window::initControlWidget2() {
 	QButtonGroup* aaButtonGroup = new QButtonGroup(rayGroupBox);
 	QRadioButton* noAA = new QRadioButton("None", rayGroupBox);
 	uniformAA = new QRadioButton("Uniform", rayGroupBox);
-	QRadioButton* poissonAA = new QRadioButton("Poisson", rayGroupBox);
+	stochasticAA = new QRadioButton("Stochastic", rayGroupBox);
 	aaButtonGroup->addButton(noAA, static_cast<int>(RayTracer::None)); 
 	aaButtonGroup->addButton(uniformAA, static_cast<int>(RayTracer::Uniform)); 
-	aaButtonGroup->addButton(poissonAA, static_cast<int>(RayTracer::Poisson)); 
+	aaButtonGroup->addButton(stochasticAA, static_cast<int>(RayTracer::Stochastic)); 
 	noAA->setChecked(true);
 	connect(aaButtonGroup, SIGNAL(buttonClicked(int)), this, SLOT(setAAMode(int)));
 	QSlider* antialiasingSlider = new QSlider(Qt::Horizontal, rayGroupBox);
@@ -276,7 +320,7 @@ void Window::initControlWidget2() {
 	uniformAALayout->addWidget(antialiasingSlider);
 	uniformAALayout->addWidget(antialiasingLabel);
 	rayLayout->addLayout(uniformAALayout);
-	rayLayout->addWidget(poissonAA);
+	rayLayout->addWidget(stochasticAA);
 
 	// Shadows settings
 	QLabel* shadowsLabel = new QLabel("Shadows", rayGroupBox);
@@ -430,6 +474,57 @@ void Window::initControlWidget2() {
 	rayLayout->addLayout(raysPTLayout);
 	rayLayout->addLayout(iterPTLayout);
 
+	//Focus Blur settings
+	QHBoxLayout* dofLayout = new QHBoxLayout();
+	QLabel* dofLabel = new QLabel("Depth of field", rayGroupBox);
+	dofSet = new QCheckBox(rayGroupBox);
+	dofSet->setCheckState( Qt::Unchecked);
+	connect(dofSet, SIGNAL(stateChanged(int)), this, SLOT(setDOFMode(int)));
+
+	QHBoxLayout* focusBlurLayout = new QHBoxLayout();
+	QLabel* focusBlurMaxSamples0 = new QLabel("Echantillons ", rayGroupBox);
+	QSlider* focusBlurSamplesSlider = new QSlider(Qt::Horizontal, rayGroupBox);
+	focusBlurSamplesSlider->setRange(1, 32);
+	focusBlurSamplesSlider->setValue(1);
+	focusBlurSamplesLabel = new QLabel("1",rayGroupBox);
+	connect(focusBlurSamplesSlider, SIGNAL(valueChanged(int)), this, SLOT(setfocusBlurSamples(int)));
+
+	QHBoxLayout* focusDistLayout = new QHBoxLayout();
+	QLabel* focusDist0 = new QLabel("Focal Distance ", rayGroupBox);
+	QDoubleSpinBox* focusDistSB = new QDoubleSpinBox( rayGroupBox);
+	focusDistSB->setValue(5.0);
+	connect(focusDistSB, SIGNAL(valueChanged(double)), this, SLOT(setfocalDistance(double)));
+
+	QHBoxLayout* focusAptLayout = new QHBoxLayout();
+	QLabel* focusApt0 = new QLabel("Aperture ", rayGroupBox);
+	QDoubleSpinBox* focusAptSB = new QDoubleSpinBox(rayGroupBox);
+	focusAptSB->setMinimum(1);
+	focusAptSB->setValue(5.6);
+	connect(focusAptSB, SIGNAL(valueChanged(double)), this, SLOT(setaperture(double)));
+
+	
+
+	dofLayout->addWidget(dofLabel);
+	dofLayout->addWidget(dofSet);
+	rayLayout->addLayout(dofLayout);
+
+	focusBlurLayout->addWidget(focusBlurMaxSamples0);
+	focusBlurLayout->addWidget(focusBlurSamplesSlider);
+	focusBlurLayout->addWidget(focusBlurSamplesLabel);
+	rayLayout->addLayout(focusBlurLayout);
+
+	focusDistLayout->addWidget(focusDist0);
+	focusDistLayout->addWidget(focusDistSB);
+	rayLayout->addLayout(focusDistLayout);
+
+	focusAptLayout->addWidget(focusApt0);
+	focusAptLayout->addWidget(focusAptSB);
+	rayLayout->addLayout(focusAptLayout);
+
+
+
+
+
 
 	// other settings
 	QPushButton* rayButton = new QPushButton("Render", rayGroupBox);
@@ -472,6 +567,48 @@ void Window::initControlWidget () {
     previewLayout->addWidget (snapshotButton);
 
     layout->addWidget (previewGroupBox);
+    
+    //Filter
+    QGroupBox* filterGroupBox = new QGroupBox("Filters", controlWidget);
+    QVBoxLayout* filterLayout = new QVBoxLayout(filterGroupBox);
+
+    QLabel* gaussianFilterLabel = new QLabel("Gaussian Filter", filterGroupBox);
+    QButtonGroup* filterButtonGroup = new QButtonGroup(filterGroupBox);
+    QRadioButton* disabledGaussianButton = new QRadioButton("Disabled", filterGroupBox);
+    enabledGaussianButton = new QRadioButton("Enabled", filterGroupBox);
+    filterButtonGroup->addButton(disabledGaussianButton, static_cast<int>(RayTracer::GaussianFilterDisabled)); 
+    filterButtonGroup->addButton(enabledGaussianButton, static_cast<int>(RayTracer::GaussianFilterEnabled)); 
+    disabledGaussianButton->setChecked(true);
+    connect(filterButtonGroup, SIGNAL(buttonClicked(int)), this, SLOT(setGaussianFilterMode(int)));
+
+    QHBoxLayout* standardDeviationLayout = new QHBoxLayout();
+    QLabel* standardDeviationLabel0 = new QLabel("Standard Deviation", filterGroupBox);
+    QSlider* standardDeviationSlider = new QSlider(Qt::Horizontal, filterGroupBox);
+    standardDeviationSlider->setRange(1, 50);
+    standardDeviationSlider->setValue(1);
+    standardDeviationGaussLabel = new QLabel("0.1", filterGroupBox);
+    connect(standardDeviationSlider, SIGNAL(valueChanged(int)), this, SLOT(setStandardDeviationGauss(int)));
+    standardDeviationLayout->addWidget(standardDeviationLabel0);
+    standardDeviationLayout->addWidget(standardDeviationSlider);
+    standardDeviationLayout->addWidget(standardDeviationGaussLabel);
+    
+    QHBoxLayout* sizeMaskLayout = new QHBoxLayout();
+    QLabel* sizeMaskLabel0 = new QLabel("Size Mask", filterGroupBox);
+    QSlider* sizeMaskSlider = new QSlider(Qt::Horizontal, filterGroupBox);
+    sizeMaskSlider->setRange(1, 10);
+    sizeMaskSlider->setValue(1);
+    sizeMaskLabel = new QLabel("3", filterGroupBox);
+    connect(sizeMaskSlider, SIGNAL(valueChanged(int)), this, SLOT(setSizeMask(int)));
+    sizeMaskLayout->addWidget(sizeMaskLabel0);
+    sizeMaskLayout->addWidget(sizeMaskSlider);
+    sizeMaskLayout->addWidget(sizeMaskLabel);
+
+    filterLayout->addWidget(gaussianFilterLabel);
+    filterLayout->addWidget(disabledGaussianButton);
+    filterLayout->addWidget(enabledGaussianButton);
+    filterLayout->addLayout(standardDeviationLayout);
+    filterLayout->addLayout(sizeMaskLayout);
+    layout->addWidget(filterGroupBox);    
     
         
     QGroupBox * globalGroupBox = new QGroupBox ("Global Settings", controlWidget);

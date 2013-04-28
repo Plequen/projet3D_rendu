@@ -93,7 +93,7 @@ void GLViewer::wheelEvent (QWheelEvent * e) {
 void GLViewer::init() {
     glClearColor (0.f, 0.f, 0.f, 0.0);
     glCullFace (GL_BACK);
-    glEnable (GL_CULL_FACE);
+    //glEnable (GL_CULL_FACE);
     glDepthFunc (GL_LEQUAL);
     glHint (GL_POLYGON_SMOOTH_HINT, GL_NICEST);
     glEnable (GL_POINT_SMOOTH);

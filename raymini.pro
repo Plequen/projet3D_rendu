@@ -1,6 +1,7 @@
 TEMPLATE = app
 TARGET   = raymini
-CONFIG  += qt opengl xml warn_on console release thread
+CONFIG  += qt opengl xml warn_on console release thread c++11
+QMAKE_CXXFLAGS += -std=c++0x
 QT *= opengl xml
 HEADERS = Window.h \
           GLViewer.h \
@@ -55,7 +56,8 @@ win32 {
 unix {
     LIBS += -lGLEW \
         -lQGLViewer \
-	-lGLU
+	-lGLU \
+	-std=c++0x
 }
 
 MOC_DIR = .tmp
