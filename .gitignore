@@ -1,8 +1,9 @@
 release
 Makefile
-models
 .tmp
 raymini
 *.swp
 *.swo
 images
+*.swm
+*.swn

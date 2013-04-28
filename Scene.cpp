@@ -26,10 +26,10 @@ void Scene::destroyInstance () {
 }
 
 Scene::Scene () {
-    buildDefaultScene ();
+    //buildDefaultScene ();
 	//scenePTRefraction();
 	//scenePTReflexion();
-	//scenePTCaustique();
+	scenePTCaustique();
     updateBoundingBox ();
 }
 
@@ -66,31 +66,31 @@ void Scene::scenePTCaustique() {
 
 	// box
 	Mesh groundMesh;
-    	groundMesh.loadOFF("models/ground.off");
+    	groundMesh.loadOFF("models/bigground.off");
 	Object ground(groundMesh, matOrange);
 
 	Mesh groundMesh2;
-    	groundMesh2.loadOFF("models/ground2.off");
+    	groundMesh2.loadOFF("models/bigground2.off");
 	Object back(groundMesh2, matOrange);
 	back.setTrans(Vec3Df(0.f, 8.f, 8.f));
 
 	Mesh groundMesh3;
-    	groundMesh3.loadOFF("models/ground3.off");
+    	groundMesh3.loadOFF("models/bigground3.off");
 	Object left(groundMesh3, matOrange);
 	left.setTrans(Vec3Df(-8.f, 0.0f, 8.f));
 
 	Mesh groundMesh4;
-    	groundMesh4.loadOFF("models/ground4.off");
+    	groundMesh4.loadOFF("models/bigground4.off");
 	Object right(groundMesh4, matGreen);
 	right.setTrans(Vec3Df(8.f, 0.0f, 8.f));
 
 	Mesh groundMesh5;
-    	groundMesh5.loadOFF("models/ground5.off");
+    	groundMesh5.loadOFF("models/bigground5.off");
 	Object front(groundMesh5, matWhite);
 	front.setTrans(Vec3Df(0.f, -8.0f, 8.f));
 
 	Mesh groundMesh6;
-    	groundMesh6.loadOFF("models/ground6.off");
+    	groundMesh6.loadOFF("models/bigground6.off");
 	Object top(groundMesh6, matWhite);
 	top.setTrans(Vec3Df(0.f, 0.0f, 16.f));
 
@@ -131,31 +131,31 @@ void Scene::scenePTReflexion() {
 
 	// box
 	Mesh groundMesh;
-    	groundMesh.loadOFF("models/ground.off");
+    	groundMesh.loadOFF("models/bigground.off");
 	Object ground(groundMesh, matWhite);
 
 	Mesh groundMesh2;
-    	groundMesh2.loadOFF("models/ground2.off");
+    	groundMesh2.loadOFF("models/bigground2.off");
 	Object back(groundMesh2, matWhite);
 	back.setTrans(Vec3Df(0.f, 8.f, 8.f));
 
 	Mesh groundMesh3;
-    	groundMesh3.loadOFF("models/ground3.off");
+    	groundMesh3.loadOFF("models/bigground3.off");
 	Object left(groundMesh3, matRed);
 	left.setTrans(Vec3Df(-8.f, 0.0f, 8.f));
 
 	Mesh groundMesh4;
-    	groundMesh4.loadOFF("models/ground4.off");
+    	groundMesh4.loadOFF("models/bigground4.off");
 	Object right(groundMesh4, matGreen);
 	right.setTrans(Vec3Df(8.f, 0.0f, 8.f));
 
 	Mesh groundMesh5;
-    	groundMesh5.loadOFF("models/ground5.off");
+    	groundMesh5.loadOFF("models/bigground5.off");
 	Object front(groundMesh5, matWhite);
 	front.setTrans(Vec3Df(0.f, -8.0f, 8.f));
 
 	Mesh groundMesh6;
-    	groundMesh6.loadOFF("models/ground6.off");
+    	groundMesh6.loadOFF("models/bigground6.off");
 	Object top(groundMesh6, matWhite);
 	top.setTrans(Vec3Df(0.f, 0.0f, 16.f));
 
@@ -201,31 +201,31 @@ void Scene::scenePTRefraction() {
 
 	// box
 	Mesh groundMesh;
-    	groundMesh.loadOFF("models/ground.off");
+    	groundMesh.loadOFF("models/bigground.off");
 	Object ground(groundMesh, matWhite);
 
 	Mesh groundMesh2;
-    	groundMesh2.loadOFF("models/ground2.off");
+    	groundMesh2.loadOFF("models/bigground2.off");
 	Object back(groundMesh2, matWhite);
 	back.setTrans(Vec3Df(0.f, 8.f, 8.f));
 
 	Mesh groundMesh3;
-    	groundMesh3.loadOFF("models/ground3.off");
+    	groundMesh3.loadOFF("models/bigground3.off");
 	Object left(groundMesh3, matRed);
 	left.setTrans(Vec3Df(-8.f, 0.0f, 8.f));
 
 	Mesh groundMesh4;
-    	groundMesh4.loadOFF("models/ground4.off");
+    	groundMesh4.loadOFF("models/bigground4.off");
 	Object right(groundMesh4, matGreen);
 	right.setTrans(Vec3Df(8.f, 0.0f, 8.f));
 
 	Mesh groundMesh5;
-    	groundMesh5.loadOFF("models/ground5.off");
+    	groundMesh5.loadOFF("models/bigground5.off");
 	Object front(groundMesh5, matWhite);
 	front.setTrans(Vec3Df(0.f, -8.0f, 8.f));
 
 	Mesh groundMesh6;
-    	groundMesh6.loadOFF("models/ground6.off");
+    	groundMesh6.loadOFF("models/bigground6.off");
 	Object top(groundMesh6, matWhite);
 	top.setTrans(Vec3Df(0.f, 0.0f, 16.f));
 
