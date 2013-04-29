@@ -181,6 +181,12 @@ void Scene::buildReflectionScene () {
     cubeMesh.loadOFF ("models/pave.off");
     Object cube (cubeMesh, groundMat);    
 //    objects.push_back (cube);
+    Mesh sphereMesh;
+    sphereMesh.loadOFF ("models/sphere.off");
+    Material sphereMat(0.8f, 0.2f, Vec3Df(0.5f, 0.3f, 0.3f), 0.0f, 0.0f, 0.0f, 1.4f, 0.5f);
+    Object sphere (sphereMesh, sphereMat);    
+    sphere.setTrans(Vec3Df(-0.5f, 0.5f,1.0f));
+    objects.push_back (sphere);
     Mesh groundMesh;
     groundMesh.loadOFF ("models/ground.off");
     Object ground (groundMesh, groundMat);    
@@ -190,7 +196,7 @@ void Scene::buildReflectionScene () {
     Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f));
     Object ram (ramMesh, ramMat);
     ram.setTrans (Vec3Df (1.0f, -1.0f, 0.f));
-    objects.push_back (ram);
+//    objects.push_back (ram);
     Mesh wallLeft;
     wallLeft.loadOFF ("models/wall.off");
     Material wallRightMat(0.8f, 0.2f, Vec3Df(1.0f,1.0f,1.0f), 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);
@@ -217,21 +223,21 @@ void Scene::buildReflectionScene () {
 
 void Scene::buildMonkeyScene()
 {
-    Material groundMat(0.8f, 0.2f, Vec3Df(1.0f,1.0f,1.0f), 0.0f, 0.8f, 0.1f, 1.0f, 0.0f);
+    Material groundMat(0.8f, 0.2f, Vec3Df(1.0f,1.0f,1.0f), 2.0f, 1.0f, 0.0f, 1.0f, 0.0f);
     Mesh groundMesh;
     groundMesh.loadOFF ("models/ground.off");
     Object ground (groundMesh, groundMat);    
-    ground.setTrans(Vec3Df(0.0f, 0.0f, 2.0f));
+    ground.setTrans(Vec3Df(0.0f, 0.0f, 0.0f));
     objects.push_back (ground);
     Mesh monkeyMesh;
     monkeyMesh.loadOFF ("models/monkey.off");
     Material monkeyMat(0.8f, 0.2f, Vec3Df(0.5f, 0.3f, 0.3f));
     Object monkey (monkeyMesh, monkeyMat);    
-    monkey.setTrans(Vec3Df(1.0f, -1.0f,0.0f));
+    monkey.setTrans(Vec3Df(0.0f, 0.0f,1.5f));
     objects.push_back (monkey);
-    Light l (Vec3Df (2.0f, 2.0f,-1.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f);
+    Light l (Vec3Df (1.0f, 1.0f,5.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f);
     lights.push_back (l);
 
-    AreaLight al (Vec3Df (2.0f, 2.0f, -1.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.f, Vec3Df(.0f,.0f,-5.0f));
+    AreaLight al (Vec3Df (1.0f, 1.0f, 5.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.f, Vec3Df(-1.0f,-1.0f,-5.0f));
     areaLights.push_back (al);
 }
