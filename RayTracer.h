@@ -32,6 +32,7 @@ public:
 	typedef enum {PTDisabled = 0, PTEnabled = 1} PTMode;
 	typedef enum {DOFDisabled = 0 , DOFEnabled = 2} DOFMode;
 	typedef enum {GaussianFilterDisabled= 0, GaussianFilterEnabled = 1} GaussianFilterMode; 
+	typedef enum {MBDisabled = 0 , MBEnabled = 2} MBMode;
 
 	inline const Vec3Df & getBackgroundColor () const { return backgroundColor;}
 	inline void setBackgroundColor (const Vec3Df & c) { backgroundColor = c; }
@@ -53,6 +54,9 @@ public:
 	void setfocalDistance(double f) {focalDistance = f;}
 	void setaperture(double f){aperture = f;}
 	void setdofMode(int s) {dofMode = static_cast<DOFMode>(s);}
+	void setmbMode(int s) { mbMode = static_cast<MBMode>(s);}
+	void setmotionBlurSamples(int s) { motionBlurSamples = s;}
+	void setshutterSpeed(double s) {shutterSpeed = s;}
 	void setGaussianFilterMode(int m) { gaussianFilterMode = static_cast<GaussianFilterMode>(m); }
 	void setStandardDeviationFilter(float stdDeviation) { standardDeviation = stdDeviation; }
 	void setSizeMask(int sizeMaskFilter) { sizeMask = sizeMaskFilter; }
@@ -60,8 +64,8 @@ public:
 	void rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned& nbReflexion,
 				  std::vector<unsigned>& objectsIntersected,
 				  std::vector<Vertex>& verticesIntersected,
-				  std::vector<Vec3Df>& directionsIntersected);
-	Vec3Df rayTrace(const Vec3Df& origin, Vec3Df& dir, float& visibility);
+				  std::vector<Vec3Df>& directionsIntersected, double time);
+	Vec3Df rayTrace(const Vec3Df& origin, Vec3Df& dir, double time, float& visibility);
 
 	Vec3Df computeColor(const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, float& visibility, float& occlusionRate);
 	float computeOcclusionRate(const Vec3Df& intersectedPoint, const Vec3Df& normal);
@@ -87,7 +91,7 @@ public:
 		unsigned int screenHeight);
     
 protected:
-	inline RayTracer() : antialiasingMode(None), shadowsMode(NoShadows), ambientOcclusionMode(AODisabled), mirrorsMode(MDisabled), ptMode(PTDisabled), aaGrid(1), raysAO(10), percentageAO(0.05f), coneAO(180.f), intensityAO(1.f), nbPointsDisc(50), raysPT(10), iterationsPT(0) , focusBlurSamples(1), focalDistance(5.0) , aperture(5.6) ,dofMode(DOFDisabled), standardDeviation(0.1f), sizeMask(3), gaussianFilterMode(GaussianFilterDisabled), nbMaxReflexion(1){}
+	inline RayTracer() : antialiasingMode(None), shadowsMode(NoShadows), ambientOcclusionMode(AODisabled), mirrorsMode(MDisabled), ptMode(PTDisabled), aaGrid(1), raysAO(10), percentageAO(0.05f), coneAO(180.f), intensityAO(1.f), nbPointsDisc(50), raysPT(10), iterationsPT(0) , focusBlurSamples(1), focalDistance(5.0) , aperture(5.6) ,dofMode(DOFDisabled), mbMode(MBDisabled) ,shutterSpeed(30.0) , motionBlurSamples(1) , standardDeviation(0.1f), sizeMask(3), gaussianFilterMode(GaussianFilterDisabled), nbMaxReflexion(1){}
 	inline virtual ~RayTracer () {}
     
 private:
@@ -110,6 +114,9 @@ private:
 	unsigned int focusBlurSamples;
 	double focalDistance ;
 	double aperture;
+	MBMode mbMode;
+	unsigned int motionBlurSamples;
+	double shutterSpeed;
 	GaussianFilterMode gaussianFilterMode;
 	float standardDeviation;
 	unsigned int sizeMask;

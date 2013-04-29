@@ -41,6 +41,7 @@ private:
 	void scenePTRefraction();
 	void scenePTReflexion();
 	void scenePTCaustique();
+    void buildMotionBlurScene ();
     void buildDefaultScene ();
     void buildMonkeyScene();
     void buildReflectionScene ();

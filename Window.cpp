@@ -248,13 +248,27 @@ void Window::setfocalDistance(double f) {
 	RayTracer::getInstance()->setfocalDistance(f);
 }
 void Window::setaperture(double f) {
-	RayTracer::getInstance()->setdofMode(static_cast<int>(RayTracer::DOFEnabled));
-	dofSet->setCheckState( Qt::Checked);
+	//RayTracer::getInstance()->setdofMode(static_cast<int>(RayTracer::DOFEnabled));
+	//dofSet->setCheckState( Qt::Checked);
 	RayTracer::getInstance()->setaperture(f);}
 
 void Window::setDOFMode(int s) {
 	RayTracer::getInstance()->setdofMode(s);}
 
+void Window::setmbMode(int s) { 
+	RayTracer::getInstance()->setmbMode(s);
+}
+void Window::setmotionBlurSamples(int s) {
+	RayTracer::getInstance()->setmbMode(static_cast<int>(RayTracer::MBEnabled));
+	mbSet->setCheckState( Qt::Checked);
+	RayTracer::getInstance()->setmotionBlurSamples( s);
+	motionBlurSamplesLabel->setText(QString::number(s));	
+}
+
+void Window::setshutterSpeed(double s) {
+	RayTracer::getInstance()->setmbMode(static_cast<int>(RayTracer::MBEnabled));
+	mbSet->setCheckState( Qt::Checked);
+	RayTracer::getInstance()->setshutterSpeed(s);}
 
 void Window::setBGColor () {
     QColor c = QColorDialog::getColor (QColor (133, 152, 181), this);
@@ -522,6 +536,41 @@ void Window::initControlWidget2() {
 	rayLayout->addLayout(focusAptLayout);
 
 
+	//Motion Blur settings
+
+	QHBoxLayout* mbLayout = new QHBoxLayout();
+	QLabel* mbLabel = new QLabel("Motion Blur", rayGroupBox);
+	mbSet = new QCheckBox(rayGroupBox);
+	mbSet->setCheckState( Qt::Unchecked);
+	connect(mbSet, SIGNAL(stateChanged(int)), this, SLOT(setmbMode(int)));
+
+	QHBoxLayout* motionBlurSamplesLayout = new QHBoxLayout();
+	QLabel* motionBlurSamples0 = new QLabel("Echantillons ", rayGroupBox);
+	QSlider* motionBlurSamplesSlider = new QSlider(Qt::Horizontal, rayGroupBox);
+	motionBlurSamplesSlider->setRange(1, 32);
+	motionBlurSamplesSlider->setValue(1);
+	motionBlurSamplesLabel = new QLabel("1",rayGroupBox);
+	connect(motionBlurSamplesSlider, SIGNAL(valueChanged(int)), this, SLOT(setmotionBlurSamples(int)));
+
+	QHBoxLayout* motionBlurShutterLayout = new QHBoxLayout();
+	QLabel* motionBlurShutter0 = new QLabel("Shutter Speed 1: ", rayGroupBox);
+	QDoubleSpinBox* motionBlurShutterSB = new QDoubleSpinBox(rayGroupBox);
+	motionBlurShutterSB->setMinimum(0.001);
+	motionBlurShutterSB->setValue(30);
+	connect(motionBlurShutterSB, SIGNAL(valueChanged(double)), this, SLOT(setshutterSpeed(double)));
+
+	mbLayout->addWidget(mbLabel);
+	mbLayout->addWidget(mbSet);
+	rayLayout->addLayout(mbLayout);
+
+	motionBlurSamplesLayout->addWidget(motionBlurSamples0);
+	motionBlurSamplesLayout->addWidget(motionBlurSamplesSlider);
+	motionBlurSamplesLayout->addWidget(motionBlurSamplesLabel);
+	rayLayout->addLayout(motionBlurSamplesLayout);
+
+	motionBlurShutterLayout->addWidget(motionBlurShutter0);
+	motionBlurShutterLayout->addWidget(motionBlurShutterSB);
+	rayLayout->addLayout(motionBlurShutterLayout);
 
 
 

@@ -55,6 +55,9 @@ public slots :
 	void setfocalDistance(double f);
 	void setaperture(double f);
 	void setDOFMode(int s);
+	void setmbMode(int s) ;
+	void setmotionBlurSamples(int s) ;
+	void setshutterSpeed(double s) ;
 	void setGaussianFilterMode(int m);
     	void setStandardDeviationGauss(int stdDeviation);
     	void setSizeMask(int sizeMask);
@@ -82,6 +85,8 @@ private :
 	QRadioButton* ptEnabledButton;
 	QLabel* focusBlurSamplesLabel;
 	QCheckBox * dofSet;
+	QCheckBox * mbSet;
+	QLabel* motionBlurSamplesLabel;
 	QRadioButton* enabledGaussianButton;
 	QLabel* standardDeviationGaussLabel;
 	QLabel* sizeMaskLabel;

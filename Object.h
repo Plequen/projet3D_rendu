@@ -44,8 +44,8 @@ public:
 
 	void buildKDTree();
 
-	void animate(unsigned int t);	
-	void setAnimationFunction(Vec3Df (*function)(Vec3Df&, unsigned int));
+	void animate(double t);	
+	void setAnimationFunction(Vec3Df (*function)(Vec3Df&, double));
 
 	bool intersectsRay(Ray& ray, Vertex& intersectionPoint, float& t, unsigned int& leafId) const;
     
@@ -57,7 +57,7 @@ private:
 	BoundingBox bbox;
 	Vec3Df trans;
 	Vec3Df initialTrans;
-	Vec3Df (*animationFunction)(Vec3Df&, unsigned int);
+	Vec3Df (*animationFunction)(Vec3Df&, double);
 };
 
 

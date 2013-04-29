@@ -26,7 +26,7 @@ void Scene::destroyInstance () {
 }
 
 Scene::Scene () {
-	buildDefaultScene ();
+	//buildDefaultScene ();
 
 	// quentin
 	//scenePTRefraction();
@@ -36,6 +36,7 @@ Scene::Scene () {
 	// guillaume
 	// buildReflectionScene ();
 	//buildMonkeyScene();
+	buildMotionBlurScene();
 
 	updateBoundingBox ();
 }
@@ -53,11 +54,11 @@ void Scene::updateBoundingBox () {
     }
 }
 
-Vec3Df animation1(Vec3Df& initial, unsigned int t) {
+Vec3Df animation1(Vec3Df& initial, double t) {
 	return initial + t * Vec3Df(0.f, 0.02f, 0.f);
 }
 
-Vec3Df animation2(Vec3Df& initial, unsigned int t) {
+Vec3Df animation2(Vec3Df& initial, double t) {
 	return initial + t * Vec3Df(-0.02f, 0.f, 0.f);
 }
 
@@ -448,4 +449,43 @@ void Scene::buildMonkeyScene()
 
     AreaLight al (Vec3Df (2.0f, 2.0f, -1.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.f, Vec3Df(.0f,.0f,-5.0f));
     areaLights.push_back (al);
+}
+
+void Scene::buildMotionBlurScene () {
+    Mesh groundMesh;
+    groundMesh.loadOFF ("models/ground.off");
+    Material groundMat(0.8f, 0.2f, Vec3Df(0.0f,0.5f,0.5f), 0.0f, 0.5f, 0.2f, 1.0f, 0.0f);
+    Object ground (groundMesh, groundMat);    
+    objects.push_back (ground);
+
+    Mesh ramMesh;
+    ramMesh.loadOFF ("models/ram.off");
+    Material ramMat (1.f, 1.f, Vec3Df (1.f, .6f, .2f), 0.0f, 0.0f, 0.0f, 1.2f, 0.8f);
+    Object ram (ramMesh, ramMat);
+    ram.setTrans (Vec3Df (0.f, 0.0f, 0.f));
+	ram.setAnimationFunction(animation1);
+    objects.push_back (ram);
+
+    Mesh rhinoMesh;
+    rhinoMesh.loadOFF ("models/rhino.off");
+    Material rhinoMat (1.0f, 0.2f, Vec3Df (0.6f, 0.6f, 0.7f));
+    Object rhino (rhinoMesh, rhinoMat);
+    rhino.setTrans (Vec3Df (-1.f, -1.0f, 0.4f));
+	rhino.setAnimationFunction(animation2);
+    objects.push_back (rhino);
+    Mesh gargMesh;
+    gargMesh.loadOFF ("models/gargoyle.off");
+    Material gargMat (0.7f, 0.4f, Vec3Df (0.5f, 0.8f, 0.5f));
+    Object garg (gargMesh, gargMat);
+    garg.setTrans (Vec3Df (-1.f, 1.0f, 0.1f));
+    objects.push_back (garg);
+
+    Light l (Vec3Df (3.0f, 3.0f, 3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f);
+    lights.push_back (l);
+
+    AreaLight al (Vec3Df (4.0f, -2.0f, 5.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.f, Vec3Df(-4.0f,2.0f,-3.0f));
+    areaLights.push_back (al);
+
+	AreaLight sun(Vec3Df(4.f, 2.f, 3.f), Vec3Df(1.f, 1.f, 1.f), 0.5f, 2.f, Vec3Df(-4.f, 2.f, -3.f));
+	areaLights.push_back(sun);
 }

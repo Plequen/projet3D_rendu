@@ -32,11 +32,11 @@ Object::Object (const Mesh & mesh, const Material & mat) : mesh (mesh), mat (mat
 	animationFunction = NULL;
 }
 
-void Object::setAnimationFunction(Vec3Df (*function)(Vec3Df&, unsigned int)) {
+void Object::setAnimationFunction(Vec3Df (*function)(Vec3Df&, double)) {
 	animationFunction = function;
 }
 
-void Object::animate(unsigned int t) {
+void Object::animate(double t) {
 	if (animationFunction != NULL)
 		trans = animationFunction(initialTrans, t);
 }
