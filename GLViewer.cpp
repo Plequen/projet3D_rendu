@@ -103,10 +103,10 @@ void GLViewer::init() {
     glLoadIdentity ();
     
     glEnable (GL_LIGHTING);
-    for (unsigned int i = 0; i < scene->getLights ().size () && i < 8; i++) {
+    for (unsigned int i = 0; i < scene->getAreaLights ().size () && i < 8; i++) {
         GLuint glID = OpenGLLightID[i];
         glEnable (glID);
-        const Light light = scene->getLights() [i];
+        const Light light = scene->getAreaLights() [i];
         const Vec3Df & p = light.getPos ();
         float intensity = light.getIntensity ();
         const Vec3Df & c = intensity * light.getColor ();

@@ -65,20 +65,21 @@ public:
 				  std::vector<unsigned>& objectsIntersected,
 				  std::vector<Vertex>& verticesIntersected,
 				  std::vector<Vec3Df>& directionsIntersected, double time);
-	Vec3Df rayTrace(const Vec3Df& origin, Vec3Df& dir, double time, float& visibility);
+	void rayTrace(const Vec3Df& origin, Vec3Df& dir, double time, std::vector<float>& visibility, std::vector<Vec3Df>& colors);
 
-	Vec3Df computeColor(const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, float& visibility, float& occlusionRate);
+	void computeColor(const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, std::vector<Vec3Df>& colors, std::vector<float>& visibility, float& occlusionRate);
 	float computeOcclusionRate(const Vec3Df& intersectedPoint, const Vec3Df& normal);
-	float computeShadowVisibility(const Vec3Df& intersectedPoint, const Object& o);
+	void computeShadowVisibility(const Vec3Df& intersectedPoint, const Object& o, std::vector<float>& visibility);
 
-	Vec3Df computeFinalColor(const std::vector<unsigned>& objectsIntersected,
-				    const std::vector<float>& visibilitiesIntersected,
+	void computeFinalColor(const std::vector<unsigned>& objectsIntersected,
+				    const std::vector<std::vector<float> >& visibilitiesIntersected,
 				    const std::vector<float>& occlusionRatesIntersected,
-				    const std::vector<Vec3Df>& colorsIntersected);
+				    const std::vector<std::vector<Vec3Df> >& colorsIntersected,
+				    std::vector<Vec3Df>& colors);
 
 	
 	Vec3Df pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, bool alreadyDiffused,  unsigned int reflections, float n); 
-	void gaussianFilter(std::vector<std::vector<float> >& visibility, const float SIGMA, const unsigned int sizeMask, unsigned int screenWidth, unsigned int screenHeight);
+	void gaussianFilter(std::vector<std::vector<std::vector<float> > >& visibility, const float SIGMA, const unsigned int sizeMask, unsigned int screenWidth, unsigned int screenHeight);
 	Vec3Df pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, bool alreadyDiffused); 
     
 	QImage render (const Vec3Df & camPos,

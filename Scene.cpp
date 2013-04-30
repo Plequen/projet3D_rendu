@@ -295,8 +295,10 @@ void Scene::buildDefaultScene () {
     Object garg (gargMesh, gargMat);
     garg.setTrans (Vec3Df (0.f, 0.0f, 0.4f));
     objects.push_back (garg);
-    Light l (Vec3Df (3.0f, 3.0f, 3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 0.8f);
-    lights.push_back (l);
+
+    //Only use areaLight
+    //They will be considered point light if the shadow mode is set on "hard" shadows
+    //GLViewer has been modified consequently
     AreaLight al (Vec3Df (3.0f, 3.0f, 3.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.8f, 2.f, Vec3Df(-1.0f,-1.0f,-1.0f));
     areaLights.push_back (al);
 }
@@ -383,9 +385,6 @@ void Scene::buildCornellBoxScene () {
     wallForgroundOb.setTrans(Vec3Df(0.0f, 3.0f,3.0f));
     objects.push_back (wallForgroundOb);
 
-    Light l (Vec3Df (0.0f, 2.8f,3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f);
-    lights.push_back (l);
-
     AreaLight al (Vec3Df (0.0f, 2.8f, 3.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.0f, Vec3Df(.0f,-1.0f,0.0f));
     areaLights.push_back (al);
 
@@ -423,9 +422,6 @@ void Scene::buildReflectionScene () {
     wallForgroundOb.setTrans(Vec3Df(0.0f, 3.0f,3.0f));
     objects.push_back (wallForgroundOb);
 
-    Light l (Vec3Df (0.0f, 0.0f,3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f);
-    lights.push_back (l);
-
     AreaLight al (Vec3Df (0.0f, 0.0f, 3.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.0f, Vec3Df(.0f,-1.0f,0.0f));
     areaLights.push_back (al);
 }
@@ -444,8 +440,6 @@ void Scene::buildMonkeyScene()
     Object monkey (monkeyMesh, monkeyMat);    
     monkey.setTrans(Vec3Df(1.0f, -1.0f,0.0f));
     objects.push_back (monkey);
-    Light l (Vec3Df (2.0f, 2.0f,-1.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f);
-    lights.push_back (l);
 
     AreaLight al (Vec3Df (2.0f, 2.0f, -1.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.f, Vec3Df(.0f,.0f,-5.0f));
     areaLights.push_back (al);
@@ -480,12 +474,6 @@ void Scene::buildMotionBlurScene () {
     garg.setTrans (Vec3Df (-1.f, 1.0f, 0.1f));
     objects.push_back (garg);
 
-    Light l (Vec3Df (3.0f, 3.0f, 3.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f);
-    lights.push_back (l);
-
     AreaLight al (Vec3Df (4.0f, -2.0f, 5.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.f, Vec3Df(-4.0f,2.0f,-3.0f));
     areaLights.push_back (al);
-
-	AreaLight sun(Vec3Df(4.f, 2.f, 3.f), Vec3Df(1.f, 1.f, 1.f), 0.5f, 2.f, Vec3Df(-4.f, 2.f, -3.f));
-	areaLights.push_back(sun);
 }

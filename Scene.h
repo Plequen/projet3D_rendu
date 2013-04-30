@@ -24,8 +24,8 @@ public:
     inline std::vector<Object> & getObjects () { return objects; }
     inline const std::vector<Object> & getObjects () const { return objects; }
     
-    inline std::vector<Light> & getLights () { return lights; }
-    inline const std::vector<Light> & getLights () const { return lights; }
+  //  inline std::vector<Light> & getLights () { return lights; }
+  //  inline const std::vector<Light> & getLights () const { return lights; }
 
     inline std::vector<AreaLight> & getAreaLights () { return areaLights; }
     inline const std::vector<AreaLight> & getAreaLights () const { return areaLights; }
@@ -47,7 +47,7 @@ private:
     void buildReflectionScene ();
     void buildCornellBoxScene (); 
     std::vector<Object> objects;
-    std::vector<Light> lights;
+//    std::vector<Light> lights;
     std::vector<AreaLight> areaLights;
     BoundingBox bbox;
 };

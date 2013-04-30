@@ -170,7 +170,7 @@ Vec3Df RayTracer::pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iter
 }
 
 
-Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, double time, float& visibility) {
+void RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, double time, vector<float>& visibility, vector<Vec3Df>& colors) {
 	Scene* scene = Scene::getInstance();
 
 	vector<Vertex> verticesIntersected;
@@ -185,9 +185,14 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, double time, float
 	unsigned int intersectedObject;
 	Vec3Df directionIntersection;
 
-	vector<Vec3Df> colorsIntersected;
-	vector<float> visibilitiesIntersected;
+	vector<vector<Vec3Df> > colorsIntersected;
+	vector<vector<float> > visibilitiesIntersected;
 	vector<float> occlusionRatesIntersected;
+
+	vector<Vec3Df> c;
+	c.resize(scene->getAreaLights().size());
+	vector<float> v;
+	v.resize(scene->getAreaLights().size());
 
 	for(unsigned i=0; i<verticesIntersected.size(); i++)
 	{
@@ -196,37 +201,43 @@ Vec3Df RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, double time, float
 		directionIntersection=directionsIntersected[i];
 		const Object& o = scene->getObjects()[intersectedObject];
 
-		float v = (float) nbPointsDisc;
 		float occlusionRate = 1.f;
 
-		colorsIntersected.push_back(computeColor(intersectedVertex, o, directionIntersection, v, occlusionRate));
+		computeColor(intersectedVertex, o, directionIntersection, c, v, occlusionRate);
 
+		colorsIntersected.push_back(c);
 		visibilitiesIntersected.push_back(v);
 		occlusionRatesIntersected.push_back(occlusionRate);
 
 		//Point is not visible, no need do compute the color of the next reflected point
-		if(v<0.001f || occlusionRate < 0.001f)
+		bool b=true;
+		for(unsigned k=0; k < scene->getAreaLights().size(); k++)
+			b=b && v[k] < 0.001f;
+
+		if(b || occlusionRate < 0.001f)
 		{
+			for(unsigned k=0; k<scene->getAreaLights().size(); k++)
+			{
+				c[k]=Vec3Df(0.0f,0.0f,0.0f);
+				v[k]=0.0f;
+			}
 			for(unsigned j=i+1; j<verticesIntersected.size(); j++)
 			{
-				visibilitiesIntersected.push_back(0.0f);
+				visibilitiesIntersected.push_back(v);
 				occlusionRatesIntersected.push_back(0.0f);
-				colorsIntersected.push_back(Vec3Df(0.0f,0.0f,0.0f));
+				colorsIntersected.push_back(c);
 			}
 			break;
 		}
 	}
 
-	Vec3Df color=computeFinalColor(objectsIntersected, visibilitiesIntersected, occlusionRatesIntersected, colorsIntersected);
-	visibility = 1.0f;	
-
-	for(unsigned int j = 0 ; j< visibilitiesIntersected.size() ; j++)
+	computeFinalColor(objectsIntersected, visibilitiesIntersected, occlusionRatesIntersected, colorsIntersected, colors);
+	for(unsigned k=0; k<scene->getAreaLights().size(); k++)
 	{
-		visibility *= visibilitiesIntersected[j];
+		visibility[k] = 1.0f;	
+		for(unsigned int j = 0 ; j< visibilitiesIntersected.size() ; j++)
+			visibility[k] *= visibilitiesIntersected[j][k];
 	}
-
-	return color; 
-
 }
 
 void RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned& nbReflexion,
@@ -346,40 +357,49 @@ void RayTracer::rayTrace(const Vec3Df& origin, Vec3Df& dir, unsigned& nbReflexio
 
 // Given all the colors of the intersected point on the path followed by the rays, 
 // computes the color of the pixel
-Vec3Df RayTracer::computeFinalColor(const vector<unsigned>& objectsIntersected,
-		const vector<float>& visibilitiesIntersected,
+void RayTracer::computeFinalColor(const vector<unsigned>& objectsIntersected,
+		const vector<vector<float> >& visibilitiesIntersected,
 		const vector<float>& occlusionRatesIntersected,
-		const vector<Vec3Df>& colorsIntersected)
+		const vector<vector<Vec3Df> >& colorsIntersected,
+		vector<Vec3Df>& colors)
 {
 	Scene* scene = Scene::getInstance();
 
 	//If no intersection was found, we put the pixel to background color
 	if(colorsIntersected.size()==0)
-		return backgroundColor;
-
-	Vec3Df finalColor;
-
-	// only show ambient occlusion
-	if (ambientOcclusionMode == AOOnly)
 	{
-		finalColor = Vec3Df(occlusionRatesIntersected[0],occlusionRatesIntersected[0],occlusionRatesIntersected[0]);
+		for(unsigned k=0; k<scene->getAreaLights().size(); k++)
+			colors[k]=backgroundColor;
 	}
-
 	else
 	{
-		// the last color on the path of the rays
-		finalColor=colorsIntersected[colorsIntersected.size()-1];
-
-		for(int i=0; i<colorsIntersected.size(); i++)
+		// only show ambient occlusion
+		if (ambientOcclusionMode == AOOnly)
 		{
-			const Material& mat = scene->getObjects()[objectsIntersected[i]].getMaterial();
-			if(mat.getReflectivity()>0.001f && mirrorsMode == MEnabled)
-				finalColor=mat.getReflectivity()*(mat.getColorBlendingFactor()*mat.getColor()+(1.0f-mat.getColorBlendingFactor())*finalColor);
-			//finalColor*=visibilitiesIntersected[i]*occlusionRatesIntersected[i];
-			finalColor*=occlusionRatesIntersected[i];
+			for(unsigned k=0; k<scene->getAreaLights().size(); k++)
+				colors[k]=Vec3Df(occlusionRatesIntersected[0],occlusionRatesIntersected[0],occlusionRatesIntersected[0]);
+		}
+
+		else
+		{
+			// the last color on the path of the rays
+			for(unsigned k=0; k<scene->getAreaLights().size(); k++)
+				colors[k]=colorsIntersected[colorsIntersected.size()-1][k];
+
+			for(int i=0; i<colorsIntersected.size(); i++)
+			{
+				const Material& mat = scene->getObjects()[objectsIntersected[i]].getMaterial();
+				if(mat.getReflectivity()>0.001f && mirrorsMode == MEnabled)
+				{
+					for(unsigned k=0; k<scene->getAreaLights().size(); k++)		
+						colors[k]=mat.getReflectivity()*(mat.getColorBlendingFactor()*mat.getColor()+(1.0f-mat.getColorBlendingFactor())*colors[k]);
+				}
+				//finalColor*=visibilitiesIntersected[i]*occlusionRatesIntersected[i];
+				for(unsigned k=0; k<scene->getAreaLights().size(); k++)
+					colors[k]*=occlusionRatesIntersected[i];
+			}
 		}
 	}
-	return finalColor;	
 }
 
 QImage RayTracer::render(const Vec3Df& camPos,
@@ -409,22 +429,37 @@ QImage RayTracer::render(const Vec3Df& camPos,
 	uniform_real_distribution<float> distribution2(0,focalDistance/aperture);
 	uniform_real_distribution<float> distribution3(-0.5,0.5);
 	//End DoF
-	
+
 	//Motion Blur parameters
 	bool mbON = true;
 	double current_time = 0;
 	double interval_time = 1.0/double(shutterSpeed);
 	uniform_real_distribution<double> distribution4(-interval_time/2,interval_time/2);
 	//End MB
-	
-	vector<vector<float> > visibilityMatrix;
+
+	Scene* scene = Scene::getInstance();
+	unsigned int NbLights = scene->getAreaLights().size();
+
+	vector<Vec3Df> colorsPerLight[screenHeight][screenWidth];
+	vector<vector<vector<float> > > visibilityMatrix;
 	visibilityMatrix.resize(screenHeight);
 	for(unsigned int k = 0 ; k<screenHeight ; k++)
 	{
 		visibilityMatrix[k].resize(screenWidth);
 		for(unsigned int m=0; m<screenWidth; m++)
-			visibilityMatrix[k][m]=0.0f;
+		{
+
+			visibilityMatrix[k][m].resize(NbLights);
+			colorsPerLight[k][m].resize(NbLights);
+			for(unsigned l=0; l<NbLights; l++)
+			{
+				visibilityMatrix[k][m][l]=1.0f;
+				colorsPerLight[k][m][l]=Vec3Df(0.0f, 0.0f, 0.0f);
+			}
+		}
 	}
+
+	Vec3Df finalColor=Vec3Df(0.0f, 0.0f, 0.0f);
 
 	//#pragma omp parallel for schedule(dynamic, 1, private(c))
 	for (unsigned int i = 0; i < screenWidth; i++) {
@@ -434,8 +469,10 @@ QImage RayTracer::render(const Vec3Df& camPos,
 			float tanY = tan (fieldOfView);
 			float stepPixelX = float (i) - screenWidth / 2.f;
 			float stepPixelY = float (j) - screenHeight / 2.f;
-			Vec3Df c = Vec3Df(0.0f, 0.0f, 0.0f);
-			float visibility = 1.0f;
+			vector<Vec3Df>& c = colorsPerLight[j][i];
+			vector<float>& visibility = visibilityMatrix[j][i];
+			//float visibility = 1.0f;
+			finalColor=Vec3Df(0.0f, 0.0f, 0.0f);
 			for (unsigned int l = 0 ; l < raysPerPixel ; l++) {
 				for (unsigned int m = 0 ; m < raysPerPixel ; m++) {
 					//#pragma omp parallel private(l, m)
@@ -455,13 +492,20 @@ QImage RayTracer::render(const Vec3Df& camPos,
 					Vec3Df stepY = (stepPixelY + stepAAY) / screenHeight * tanY * upVectorOptics;
 					Vec3Df step = stepX + stepY;
 					Vec3Df dir = directionOptics + step;
-					Vec3Df c_optics(0.0,0.0,0.0);
+					vector<Vec3Df> c_optics;
+					c_optics.resize(NbLights);
+					for(unsigned k=0; k<NbLights; k++)
+						c_optics[k]=Vec3Df(0.0f, 0.0f, 0.0f);
+
 
 					if (ptMode == PTDisabled)
 					{
 						if (dofMode == DOFEnabled)
 						{
-							float v=0.0f;
+							vector<float> v;
+							for(unsigned k=0; k<NbLights; k++)
+								v[k]=0.0f;
+
 							for(unsigned int s = 0 ; s < focusBlurSamples ; s++) 
 							{
 								float rnd1 = distribution1(generator),rnd2 = distribution2(generator);
@@ -473,50 +517,90 @@ QImage RayTracer::render(const Vec3Df& camPos,
 								Vec3Df imagePoint = camPos + dir;
 								Vec3Df dirSample = imagePoint - lensOrigin;
 								dirSample.normalize();
-								Vec3Df c_motion(0.0,0.0,0.0);
+
+								vector<Vec3Df> c_motion;
+								c_motion.resize(NbLights);
+								vector<Vec3Df> c_motion_temp;
+								c_motion_temp.resize(NbLights);
+								for(unsigned k=0; k<NbLights; k++)
+								{
+									c_motion[k]=Vec3Df(0.0f, 0.0f, 0.0f);
+									c_motion_temp[k]=Vec3Df(0.0f, 0.0f, 0.0f);
+								}
+
 								if(mbMode == MBEnabled) { 
 									for (unsigned int t = 0 ; t < motionBlurSamples ; t++) {
 										current_time = distribution4(generator);
-										c_motion += (rayTrace(lensOrigin, dirSample,current_time, visibility));
-										v+=visibility/float(motionBlurSamples);
+										rayTrace(lensOrigin, dirSample,current_time, visibility, c_motion_temp);
+										for(unsigned k=0; k<NbLights; k++)
+										{
+											c_motion[k] += c_motion_temp[k];
+											v[k]=visibility[k]/float(motionBlurSamples);
+										}
 									}
-									c_motion = c_motion /(float(motionBlurSamples)*aperture); //on divise par l'ouverture pour simuler l'exposition
-									c_optics+=c_motion;
+
+									for(unsigned k=0; k <NbLights; k++)
+									{
+										c_motion[k] = c_motion[k] /(float(motionBlurSamples)*aperture); //on divise par l'ouverture pour simuler l'exposition				
+										c_optics[k]+=c_motion[k];
+									}
 								}
 								else
 								{
-									c_optics += rayTrace(lensOrigin, dirSample, 0, visibility);
-									v+=visibility;
+									rayTrace(lensOrigin, dirSample, 0, visibility, c_optics);
+									for(unsigned k=0; k<NbLights; k++)
+										v[k]+=visibility[k];
 								}
 							}
-							c_optics = c_optics / float(focusBlurSamples);
-							c+= c_optics;
-							visibilityMatrix[j][i] += v/focusBlurSamples; 
+
+							for(unsigned k=0; k<NbLights; k++)
+							{
+								c_optics[k] = c_optics[k] / float(focusBlurSamples);
+								c[k]+= c_optics[k];
+								visibilityMatrix[j][i][k] += v[k]/focusBlurSamples; 
+							}
 						}
 						else if(mbMode == MBEnabled) 
 						{
-									for (unsigned int t = 0 ; t < motionBlurSamples ; t++) {
-										current_time = distribution4(generator);
-										c_optics += (rayTrace(camPos, dir,current_time, visibility));
-										visibilityMatrix[j][i] += visibility/float(motionBlurSamples);
-									}
-									c_optics = c_optics /(float(motionBlurSamples)*aperture); //on divise par l'ouverture pour simuler l'exposition
-									c+=c_optics;
+							vector<Vec3Df> c_optics_temp;
+							c_optics_temp.resize(NbLights);
+							for (unsigned int t = 0 ; t < motionBlurSamples ; t++) {
+								current_time = distribution4(generator);
+								rayTrace(camPos, dir,current_time, visibility, c_optics_temp);
+								for(unsigned k=0; k<NbLights; k++)
+								{
+									c_optics[k]+=c_optics_temp[k];
+									visibilityMatrix[j][i][k] += visibility[k]/float(motionBlurSamples);
+								}
+
+							}
+
+							for(unsigned k=0; k<NbLights; k++)
+							{
+								c_optics[k] = c_optics[k] /(float(motionBlurSamples)*aperture); //on divise par l'ouverture pour simuler l'exposition
+								c[k]+=c_optics[k];
+							}
 						} 
 						else
 						{
-							c += rayTrace(camPos, dir, 0, visibility);
-							visibilityMatrix[j][i] += visibility;
+							rayTrace(camPos, dir, 0, visibility, c);
+							for(unsigned k=0; k<NbLights; k++)
+								visibilityMatrix[j][i][k] += visibility[k];
 						}
 					}
 					else
-						c += pathTrace(camPos, dir, 0, false, 10, 1.f);
+					{
+						finalColor += pathTrace(camPos, dir, 0, false, 10, 1.f);
+					}
 				}
 			}
-			visibilityMatrix[j][i]/=(raysPerPixel * raysPerPixel);
-			//c = Vec3Df(255.0f, 255.0f, 255.0f) ;
-			c *= 255.0f / (raysPerPixel * raysPerPixel);
-			image.setPixel(i, j, qRgb(clamp(c[0], 0, 255), clamp(c[1], 0, 255), clamp(c[2], 0, 255)));
+
+
+			for(unsigned k=0; k<NbLights; k++)
+				visibilityMatrix[j][i][k]/=(raysPerPixel * raysPerPixel);
+
+			finalColor *= 255.0f / (raysPerPixel * raysPerPixel);
+			image.setPixel(i, j, qRgb(clamp(finalColor[0], 0, 255), clamp(finalColor[1], 0, 255), clamp(finalColor[2], 0, 255)));
 		}
 	}
 	//The size of the filter must be an odd number
@@ -526,18 +610,21 @@ QImage RayTracer::render(const Vec3Df& camPos,
 		{
 			gaussianFilter(visibilityMatrix, standardDeviation, sizeMask, screenWidth, screenHeight);
 		}
-		QRgb colorPixel;
-		Vec3Df colorAfterFilter(0.0f, 0.0f, 0.0f);
+		Vec3Df colorAfterFilter;
 
 		for(unsigned int i = 0 ; i<screenWidth ; i++)
 		{
 			for(unsigned int j = 0 ; j<screenHeight ; j++)
 			{
-				colorPixel = image.pixel(i,j);
-				colorAfterFilter[0] = qRed(colorPixel)*visibilityMatrix[j][i];			
-				colorAfterFilter[1] = qGreen(colorPixel)*visibilityMatrix[j][i];			
-				colorAfterFilter[2] = qBlue(colorPixel)*visibilityMatrix[j][i];
+				colorAfterFilter=Vec3Df(0.0f, 0.0f, 0.0f);
+				for (unsigned int k = 0 ; k < NbLights ; k++) 
+				{
+					colorAfterFilter[0] += visibilityMatrix[j][i][k]*colorsPerLight[j][i][k][0];
+					colorAfterFilter[1] += visibilityMatrix[j][i][k]*colorsPerLight[j][i][k][1];
+					colorAfterFilter[2] += visibilityMatrix[j][i][k]*colorsPerLight[j][i][k][2];
+				}
 
+				colorAfterFilter *= 255.0f / (raysPerPixel * raysPerPixel);
 				image.setPixel(i, j, qRgb(clamp(colorAfterFilter[0], 0, 255), clamp(colorAfterFilter[1], 0, 255), clamp(colorAfterFilter[2], 0, 255)));
 			}
 		}
@@ -548,7 +635,7 @@ QImage RayTracer::render(const Vec3Df& camPos,
 }
 
 // compute the color (unoccluded) of a vertex using phong shading, the visibility of this vertex (shadows) and the occlusion rate of this vertex
-Vec3Df RayTracer::computeColor(const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, float& visibility, float& occlusionRate)
+void RayTracer::computeColor(const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, vector<Vec3Df>& color, vector<float>& visibility, float& occlusionRate)
 {
 	Scene* scene = Scene::getInstance();
 
@@ -564,21 +651,17 @@ Vec3Df RayTracer::computeColor(const Vertex& intersectedVertex, const Object& o,
 		occlusionRate=computeOcclusionRate(intersectedPoint, normal);
 
 	if (ambientOcclusionMode != AOOnly) {
-		visibility=computeShadowVisibility(intersectedPoint, o);
+		computeShadowVisibility(intersectedPoint, o, visibility);
 	}
 
-	Vec3Df c(0.f, 0.f, 0.f);
 	vector<AreaLight>& sceneLights = scene->getAreaLights();
 	for (unsigned int k = 0 ; k < sceneLights.size() ; k++) {
 		Vec3Df lightDirection = sceneLights[k].getPos() - intersectedPoint;
 		lightDirection.normalize();
-		c += sceneLights[k].getIntensity() * o.getMaterial().computeColor(normal, -lightDirection, sceneLights[k].getColor(), -dir);
+		color[k] = sceneLights[k].getIntensity() * o.getMaterial().computeColor(normal, -lightDirection, sceneLights[k].getColor(), -dir);
 	}
-	visibility /= (float) nbPointsDisc;
-
-	return c;
-
 }
+
 float RayTracer::computeOcclusionRate(const Vec3Df& intersectedPoint, const Vec3Df& normal)
 {
 	Scene* scene = Scene::getInstance();
@@ -613,14 +696,17 @@ float RayTracer::computeOcclusionRate(const Vec3Df& intersectedPoint, const Vec3
 
 }
 
-float RayTracer::computeShadowVisibility(const Vec3Df& intersectedPoint, const Object& o)
+void RayTracer::computeShadowVisibility(const Vec3Df& intersectedPoint, const Object& o, vector<float>& visibility)
 {
-	float visibility = (float) nbPointsDisc;
+
 	Scene* scene = Scene::getInstance();
 	float distShadow;
 	Vertex intersectionShadow;
 	unsigned int leafIdShadow;
 	vector<AreaLight>& sceneLights = scene->getAreaLights();
+
+	for(unsigned k=0; k<sceneLights.size(); k++)
+		visibility[k] = (float) nbPointsDisc;
 
 	for (unsigned int k = 0 ; k < sceneLights.size() ; k++) {
 		Vec3Df lightDirection = sceneLights[k].getPos() - intersectedPoint;
@@ -643,13 +729,13 @@ float RayTracer::computeShadowVisibility(const Vec3Df& intersectedPoint, const O
 					{
 						if(ob.getMaterial().getTransparency()<0.0001f)
 						{
-							visibility=0.0f;
+							visibility[k]=0.0f;
 							break;
 						}
 
 						//if the object is transparent, the visibility will be equals to its transparency
-						else if(visibility>0.00001f)
-							visibility=ob.getMaterial().getTransparency()*nbPointsDisc;
+						else if(visibility[k]>0.00001f)
+							visibility[k]=ob.getMaterial().getTransparency()*nbPointsDisc;
 					}
 				}
 			}
@@ -667,7 +753,7 @@ float RayTracer::computeShadowVisibility(const Vec3Df& intersectedPoint, const O
 				Vec3Df directionToLightDisc = lightPosDisc - (intersectedPoint+o.getTrans());
 				directionToLightDisc.normalize();
 
-				float v=visibility;
+				float v=visibility[k];
 				for (unsigned int n = 0; n < scene->getObjects().size (); n++) 
 				{
 					const Object& ob = scene->getObjects()[n];
@@ -679,30 +765,33 @@ float RayTracer::computeShadowVisibility(const Vec3Df& intersectedPoint, const O
 						{
 							if(ob.getMaterial().getTransparency()<0.0001f)
 							{
-								visibility=v-1.0f;
+								visibility[k]=v-1.0f;
 								break;
 							}
 							else
-								visibility-=(1-ob.getMaterial().getTransparency());
+								visibility[k]-=(1-ob.getMaterial().getTransparency());
 						}
 					}
 				}
 			}
 		}
 	}
-	return visibility;
+	for(unsigned k=0; k<sceneLights.size(); k++)
+		visibility[k] /= (float) nbPointsDisc;
 }
-void RayTracer::gaussianFilter(vector<vector<float> >& visibility, const float SIGMA, const unsigned int sizeMask, unsigned int screenWidth, unsigned int screenHeight)
+
+void RayTracer::gaussianFilter(vector<vector<vector<float> > >& visibility, const float SIGMA, const unsigned int sizeMask, unsigned int screenWidth, unsigned int screenHeight)
 {
 	const float VAR = SIGMA*SIGMA;
 	const float PI = 3.141592;
 	const unsigned int coeffMaskHeight = screenHeight+2*(sizeMask/2);
 	const unsigned int coeffMaskWidth = screenWidth+2*(sizeMask/2);
 	double coeffMask [sizeMask][sizeMask];
-	float visibilityPadding [coeffMaskHeight][coeffMaskWidth];
+	Scene* scene = Scene::getInstance();
+	unsigned NbLights=scene->getAreaLights().size();
+	float visibilityPadding [coeffMaskHeight][coeffMaskWidth][NbLights];
 
 	float sumCoeff = 0.0f;
-	cout << "h : " << screenHeight << " ; w : " << screenWidth << "    " << coeffMaskHeight << "   " << coeffMaskWidth;
 	//Coeff for the gaussian filter sizeMask*sizeMask
 	for(unsigned int i = 0 ; i< sizeMask ; i++)
 	{
@@ -717,58 +806,84 @@ void RayTracer::gaussianFilter(vector<vector<float> >& visibility, const float S
 	}
 	//coeffMask[sizeMask/2][sizeMask/2]=1.0;
 
-	//Matrix initialisation
-	for(unsigned int i = 0 ; i< coeffMaskHeight ; i++)
-	{	
-		if(i<sizeMask/2)
-		{
-			for(unsigned int j = 0 ; j<screenWidth ; j++)
-				visibilityPadding[i][j+sizeMask/2-1]=visibility[0][j];
-
-			for(unsigned int j =0; j<sizeMask/2-1; j++)
-				visibilityPadding[i][j]=visibility[0][0];
-			for(unsigned int j = screenWidth; j<coeffMaskWidth; j++)
-				visibilityPadding[i][j]=visibility[0][screenWidth-1];
-		}
-
-		else if(i>screenHeight+sizeMask/2-1)
-		{
-			for(unsigned int j = 0 ; j<screenWidth ; j++)
-				visibilityPadding[i][j+sizeMask/2-1]=visibility[screenHeight-1][j];
-			for(unsigned int j =0; j<sizeMask/2-1; j++)
-				visibilityPadding[i][j]=visibility[screenHeight-1][0];
-			for(unsigned int j = screenWidth; j<coeffMaskWidth; j++)
-				visibilityPadding[i][j]=visibility[screenHeight-1][screenWidth-1];
-		}
-		else
-		{
-			for(unsigned int j = 0 ; j< coeffMaskWidth ; j++)
-			{	
-				if(j<sizeMask/2)
-					visibilityPadding[i][j]=visibility[i-sizeMask/2][0];
-				if(j>sizeMask/2+screenWidth-1)
-					visibilityPadding[i][j]=visibility[i-sizeMask/2][screenWidth-1];
-				else
-					visibilityPadding[i][j]=visibility[i-sizeMask/2][j-sizeMask/2];
-			}
-		}
-	}
-
-	int halfSizeMask = sizeMask/2;
-	for(unsigned int i = 0 ; i<screenHeight ; i++)
+/*	//Matrix initialisation
+	for(unsigned k=0; k<NbLights; k++)
 	{
-		for(unsigned int j = 0 ; j<screenWidth ; j++)
-		{
-			visibility[i][j] = 0.0f;
-			for(int k = -halfSizeMask ; k <=halfSizeMask ; k++)
+		for(unsigned int i = 0 ; i< coeffMaskHeight ; i++)
+		{	
+			if(i<sizeMask/2)
 			{
-				for(int l = -halfSizeMask ; l <= halfSizeMask ; l++)
-				{
-					visibility[i][j] += visibilityPadding[i+k+sizeMask/2][j+l+sizeMask/2]*coeffMask[k+sizeMask/2][l+sizeMask/2];
+				for(unsigned int j = 0 ; j<screenWidth ; j++)
+					visibilityPadding[i][j+sizeMask/2-1][k]=visibility[0][j][k];
+
+				for(unsigned int j =0; j<sizeMask/2-1; j++)
+					visibilityPadding[i][j][k]=visibility[0][0][k];
+				for(unsigned int j = screenWidth; j<coeffMaskWidth; j++)
+					visibilityPadding[i][j][k]=visibility[0][screenWidth-1][k];
+			}
+
+			else if(i>screenHeight+sizeMask/2-1)
+			{
+				for(unsigned int j = 0 ; j<screenWidth ; j++)
+					visibilityPadding[i][j+sizeMask/2-1][k]=visibility[screenHeight-1][j][k];
+				for(unsigned int j =0; j<sizeMask/2-1; j++)
+					visibilityPadding[i][j][k]=visibility[screenHeight-1][0][k];
+				for(unsigned int j = screenWidth; j<coeffMaskWidth; j++)
+					visibilityPadding[i][j][k]=visibility[screenHeight-1][screenWidth-1][k];
+			}
+			else
+			{
+				for(unsigned int j = 0 ; j< coeffMaskWidth ; j++)
+				{	
+					if(j<sizeMask/2)
+						visibilityPadding[i][j][k]=visibility[i-sizeMask/2][0][k];
+					if(j>sizeMask/2+screenWidth-1)
+						visibilityPadding[i][j][k]=visibility[i-sizeMask/2][screenWidth-1][k];
+					else
+						visibilityPadding[i][j][k]=visibility[i-sizeMask/2][j-sizeMask/2][k];
 				}
 			}
-			visibility[i][j] /= sumCoeff;
+
+		}
+	}
+*/
+	for(unsigned int i = 0 ; i< coeffMaskHeight ; i++)
+	{	
+		for(unsigned int j = 0 ; j<coeffMaskWidth ; j++)
+		{
+			for(unsigned m=0;m<NbLights; m++)
+			{
+			if(i < sizeMask/2 || j<sizeMask/2 || i>(screenHeight-1) || j>(screenWidth-1))
+			{
+				visibilityPadding[i][j][m] = 0.0f;
+			}
+			else
+			{
+				visibilityPadding[i][j][m] = visibility[i-sizeMask/2][j-sizeMask/2][m];
+			}
+			}
 		}	
+	}
+
+	cout << "padding ok" << endl;
+	int halfSizeMask = sizeMask/2;
+	for(unsigned m=0;m<NbLights; m++)
+	{
+		for(unsigned int i = 0 ; i<screenHeight ; i++)
+		{
+			for(unsigned int j = 0 ; j<screenWidth ; j++)
+			{
+				visibility[i][j][m] = 0.0f;
+				for(int k = -halfSizeMask ; k <=halfSizeMask ; k++)
+				{
+					for(int l = -halfSizeMask ; l <= halfSizeMask ; l++)
+					{
+						visibility[i][j][m] += visibilityPadding[i+k+sizeMask/2][j+l+sizeMask/2][m]*coeffMask[k+sizeMask/2][l+sizeMask/2];
+					}
+				}
+				visibility[i][j][m] /= sumCoeff;
+			}	
+		}
 	}
 }
 
