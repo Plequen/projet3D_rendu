@@ -474,6 +474,12 @@ void Scene::buildMotionBlurScene () {
     garg.setTrans (Vec3Df (-1.f, 1.0f, 0.1f));
     objects.push_back (garg);
 
-    AreaLight al (Vec3Df (4.0f, -2.0f, 5.0f), Vec3Df (1.0f, 1.f, 1.0f), 0.5f, 2.f, Vec3Df(-4.0f,2.0f,-3.0f));
+    AreaLight al (Vec3Df (4.0f, -2.0f, 5.0f), Vec3Df (0.0f, 0.0f, 1.0f), 1.0f, 2.f, Vec3Df(-4.0f,2.0f,-3.0f));
     areaLights.push_back (al);
+
+    AreaLight al2 (Vec3Df (4.0f, 2.0f, 5.0f), Vec3Df (0.0f, 1.0f, 0.0f), 1.0f, 2.f, Vec3Df(-4.0f,2.0f,-3.0f));
+    areaLights.push_back (al2);
+
+    AreaLight al4 (Vec3Df (1.0f, 10.0f, 5.0f), Vec3Df (1.0f, 1.0f, 1.0f), 1.0f, 2.f, Vec3Df(-4.0f,2.0f,-3.0f));
+    areaLights.push_back (al4);
 }

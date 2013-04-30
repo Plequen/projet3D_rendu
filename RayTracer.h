@@ -65,7 +65,7 @@ public:
 				  std::vector<unsigned>& objectsIntersected,
 				  std::vector<Vertex>& verticesIntersected,
 				  std::vector<Vec3Df>& directionsIntersected, double time);
-	void rayTrace(const Vec3Df& origin, Vec3Df& dir, double time, std::vector<float>& visibility, std::vector<Vec3Df>& colors);
+	void rayTrace(const Vec3Df& origin, Vec3Df& dir, double time, float* visibility, Vec3Df* colors);
 
 	void computeColor(const Vertex& intersectedVertex, const Object& o, const Vec3Df& dir, std::vector<Vec3Df>& colors, std::vector<float>& visibility, float& occlusionRate);
 	float computeOcclusionRate(const Vec3Df& intersectedPoint, const Vec3Df& normal);
@@ -75,11 +75,11 @@ public:
 				    const std::vector<std::vector<float> >& visibilitiesIntersected,
 				    const std::vector<float>& occlusionRatesIntersected,
 				    const std::vector<std::vector<Vec3Df> >& colorsIntersected,
-				    std::vector<Vec3Df>& colors);
+				    Vec3Df* colors);
 
 	
 	Vec3Df pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, bool alreadyDiffused,  unsigned int reflections, float n); 
-	void gaussianFilter(std::vector<std::vector<std::vector<float> > >& visibility, const float SIGMA, const unsigned int sizeMask, unsigned int screenWidth, unsigned int screenHeight);
+	void gaussianFilter(float*** visibility, const float SIGMA, const unsigned int sizeMask, unsigned int screenWidth, unsigned int screenHeight);
 	Vec3Df pathTrace(const Vec3Df& origin, Vec3Df& dir, unsigned int iterations, bool alreadyDiffused); 
     
 	QImage render (const Vec3Df & camPos,
